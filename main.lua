@@ -97,7 +97,7 @@ function love.load()
 
     -- initialize our player paddles; make them global so that they can be
     -- detected by other functions and modules
-    numHumanPlayers = 0
+    numHumanPlayers = 2
     player1 = Paddle(10, 30, PADDLE_WIDTH, PADDLE_HEIGHT)
     player2 = Paddle(VIRTUAL_WIDTH - 10, VIRTUAL_HEIGHT - 30, PADDLE_WIDTH, PADDLE_HEIGHT)
 
@@ -240,41 +240,20 @@ function love.update(dt)
     --
     -- paddles can move no matter what state we're in, but only if the
     -- humans are in charge!
+    --
 
-    -- player 1 (human if numHumans >= 1)
-    if numHumanPlayers >= 1 then
-        if love.keyboard.isDown('w') then
-            player1.dy = -PADDLE_SPEED
-        elseif love.keyboard.isDown('s') then
-            player1.dy = PADDLE_SPEED
-        else
-            player1.dy = 0
-        end
-    end
-
-    -- player 2 (human if numHumans >= 2)
-    if numHumanPlayers >= 2 then
-        if love.keyboard.isDown('up') then
-            player2.dy = -PADDLE_SPEED
-        elseif love.keyboard.isDown('down') then
-            player2.dy = PADDLE_SPEED
-        else
-            player2.dy = 0
-        end
-    end
-
-    -- for now, numHumans == 0 will allow arrows to control both paddles
-    if numHumanPlayers == 0 then
-        if love.keyboard.isDown('up') then
-            player2.dy = -PADDLE_SPEED
-            player1.dy = -PADDLE_SPEED
-        elseif love.keyboard.isDown('down') then
-            player2.dy = PADDLE_SPEED
-            player1.dy = PADDLE_SPEED
-        else
-            player2.dy = 0
-            player1.dy = 0
-        end
+    if numHumanPlayers == 1 then
+        -- player 1 human; player 2 is computer
+        player1:humanmove('w', 's', PADDLE_SPEED)
+        player2:automove(PADDLE_SPEED, ball)
+    elseif numHumanPlayers == 2 then
+        -- player 1 and 2 are human
+        player1:humanmove('w', 's', PADDLE_SPEED)
+        player2:humanmove('up', 'down', PADDLE_SPEED)
+    else
+        -- player 1 and 2 are computer
+        player1:automove(PADDLE_SPEED, ball)
+        player2:automove(PADDLE_SPEED, ball)
     end
 
     -- update our ball based on its DX and DY only if we're in play state;
