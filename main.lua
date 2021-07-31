@@ -143,16 +143,7 @@ end
     across system hardware.
 ]]
 function love.update(dt)
-    if gameState == 'serve' then
-        -- before switching to play, initialize ball's velocity based
-        -- on player who last scored
-        ball.dy = math.random(-50, 50)
-        if servingPlayer == 1 then
-            ball.dx = math.random(140, 200)
-        else
-            ball.dx = -math.random(140, 200)
-        end
-    elseif gameState == 'play' then
+    if gameState == 'play' then
         -- detect ball collision with paddles, reversing dx if true and
         -- slightly increasing it, then altering the dy based on the position
         -- at which it collided, then playing a sound effect
@@ -210,6 +201,7 @@ function love.update(dt)
             if player2Score == 10 then
                 winningPlayer = 2
                 gameState = 'done'
+                numHumanPlayers = 2
             else
                 gameState = 'serve'
                 -- places the ball in the middle of the screen, no velocity
@@ -229,6 +221,7 @@ function love.update(dt)
             if player1Score == 10 then
                 winningPlayer = 1
                 gameState = 'done'
+                numHumanPlayers = 2
             else
                 gameState = 'serve'
                 -- places the ball in the middle of the screen, no velocity
@@ -245,15 +238,15 @@ function love.update(dt)
     if numHumanPlayers == 1 then
         -- player 1 human; player 2 is computer
         player1:humanmove('w', 's', PADDLE_SPEED)
-        player2:automove(PADDLE_SPEED, ball)
+        player2:automove(PADDLE_SPEED, ball, 2)
     elseif numHumanPlayers == 2 then
         -- player 1 and 2 are human
         player1:humanmove('w', 's', PADDLE_SPEED)
         player2:humanmove('up', 'down', PADDLE_SPEED)
     else
         -- player 1 and 2 are computer
-        player1:automove(PADDLE_SPEED, ball)
-        player2:automove(PADDLE_SPEED, ball)
+        player1:automove(PADDLE_SPEED, ball, 1)
+        player2:automove(PADDLE_SPEED, ball, 2)
     end
 
     -- update our ball based on its DX and DY only if we're in play state;
@@ -275,8 +268,12 @@ end
 function love.keypressed(key)
     -- `key` will be whatever key this callback detected as pressed
     if key == 'escape' then
-        -- the function LÖVE2D uses to quit the application
-        love.event.quit()
+        if gameState == 'play' then
+            gameState = 'start'
+        else
+            -- the function LÖVE2D uses to quit the application
+            love.event.quit()
+        end
 
     elseif key == '0' or key == '1' or key == '2' then
         -- enter 0, 1 or 2 is only valid at the start, and sets the number of
@@ -290,6 +287,14 @@ function love.keypressed(key)
         -- if we press enter during either the start or serve phase, it should
         -- transition to the next appropriate state
         if gameState == 'serve' then
+            -- before switching to play, initialize ball's velocity based
+            -- on player who last scored
+            ball.dy = math.random(-50, 50)
+            if servingPlayer == 1 then
+                ball.dx = math.random(140, 200)
+            else
+                ball.dx = -math.random(140, 200)
+            end
             gameState = 'play'
         elseif gameState == 'done' then
             -- game is simply in a restart phase here, but will set the serving

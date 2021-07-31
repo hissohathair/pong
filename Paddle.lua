@@ -79,12 +79,18 @@ end
     Called when the computer is controlling the paddle. For now, we pass in
     the paddle_speed (same as for humans) and the ball's current position.
 ]]
-function Paddle:automove(paddle_speed, ball)
+function Paddle:automove(paddle_speed, ball, playerNum)
     -- simple method: track the ball, try and hit in the middle of the paddle
-    if ball.y < self.y + ball.height then
-        self.dy = -paddle_speed
-    elseif ball.y > self.y + self.height - ball.height then
-        self.dy = paddle_speed
+    -- For a bit of added "realism", we'll only move when the ball is heading 
+    -- our way
+    if (playerNum == 1 and ball.dx < 0) or (playerNum ==2 and ball.dx > 0) then
+        if ball.y < self.y + ball.height then
+            self.dy = -paddle_speed
+        elseif ball.y > self.y + self.height - ball.height then
+            self.dy = paddle_speed
+        else
+            self.dy = 0
+        end
     else
         self.dy = 0
     end
