@@ -49,6 +49,13 @@ VIRTUAL_HEIGHT = 243
 
 -- paddle movement speed
 PADDLE_SPEED = 200
+PADDLE_WIDTH = 5
+PADDLE_HEIGHT = 20
+
+-- ball settings
+BALL_WIDTH = 4
+BALL_HEIGHT = 4
+BALL_ACCEL = 1.03
 
 --[[
     Called just once at the beginning of the game; used to set up
@@ -90,11 +97,11 @@ function love.load()
 
     -- initialize our player paddles; make them global so that they can be
     -- detected by other functions and modules
-    player1 = Paddle(10, 30, 5, 20)
-    player2 = Paddle(VIRTUAL_WIDTH - 10, VIRTUAL_HEIGHT - 30, 5, 20)
+    player1 = Paddle(10, 30, PADDLE_WIDTH, PADDLE_HEIGHT)
+    player2 = Paddle(VIRTUAL_WIDTH - 10, VIRTUAL_HEIGHT - 30, PADDLE_WIDTH, PADDLE_HEIGHT)
 
     -- place a ball in the middle of the screen
-    ball = Ball(VIRTUAL_WIDTH / 2 - 2, VIRTUAL_HEIGHT / 2 - 2, 4, 4)
+    ball = Ball(VIRTUAL_WIDTH / 2 - BALL_WIDTH / 2, VIRTUAL_HEIGHT / 2 - BALL_HEIGHT / 2, BALL_WIDTH, BALL_HEIGHT)
 
     -- initialize score variables
     player1Score = 0
@@ -149,8 +156,8 @@ function love.update(dt)
         -- slightly increasing it, then altering the dy based on the position
         -- at which it collided, then playing a sound effect
         if ball:collides(player1) then
-            ball.dx = -ball.dx * 1.03
-            ball.x = player1.x + 5
+            ball.dx = -ball.dx * BALL_ACCEL
+            ball.x = player1.x + player1.width
 
             -- keep velocity going in the same direction, but randomize it
             if ball.dy < 0 then
@@ -162,8 +169,8 @@ function love.update(dt)
             sounds['paddle_hit']:play()
         end
         if ball:collides(player2) then
-            ball.dx = -ball.dx * 1.03
-            ball.x = player2.x - 4
+            ball.dx = -ball.dx * BALL_ACCEL
+            ball.x = player2.x - ball.width
 
             -- keep velocity going in the same direction, but randomize it
             if ball.dy < 0 then
@@ -183,9 +190,9 @@ function love.update(dt)
             sounds['wall_hit']:play()
         end
 
-        -- -4 to account for the ball's size
-        if ball.y >= VIRTUAL_HEIGHT - 4 then
-            ball.y = VIRTUAL_HEIGHT - 4
+        -- -ball.height to account for the ball's size
+        if ball.y >= VIRTUAL_HEIGHT - ball.height then
+            ball.y = VIRTUAL_HEIGHT - ball.height
             ball.dy = -ball.dy
             sounds['wall_hit']:play()
         end
