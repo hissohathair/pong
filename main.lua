@@ -97,6 +97,7 @@ function love.load()
 
     -- initialize our player paddles; make them global so that they can be
     -- detected by other functions and modules
+    numHumanPlayers = 0
     player1 = Paddle(10, 30, PADDLE_WIDTH, PADDLE_HEIGHT)
     player2 = Paddle(VIRTUAL_WIDTH - 10, VIRTUAL_HEIGHT - 30, PADDLE_WIDTH, PADDLE_HEIGHT)
 
@@ -237,24 +238,43 @@ function love.update(dt)
     end
 
     --
-    -- paddles can move no matter what state we're in
-    --
-    -- player 1
-    if love.keyboard.isDown('w') then
-        player1.dy = -PADDLE_SPEED
-    elseif love.keyboard.isDown('s') then
-        player1.dy = PADDLE_SPEED
-    else
-        player1.dy = 0
+    -- paddles can move no matter what state we're in, but only if the
+    -- humans are in charge!
+
+    -- player 1 (human if numHumans >= 1)
+    if numHumanPlayers >= 1 then
+        if love.keyboard.isDown('w') then
+            player1.dy = -PADDLE_SPEED
+        elseif love.keyboard.isDown('s') then
+            player1.dy = PADDLE_SPEED
+        else
+            player1.dy = 0
+        end
     end
 
-    -- player 2
-    if love.keyboard.isDown('up') then
-        player2.dy = -PADDLE_SPEED
-    elseif love.keyboard.isDown('down') then
-        player2.dy = PADDLE_SPEED
-    else
-        player2.dy = 0
+    -- player 2 (human if numHumans >= 2)
+    if numHumanPlayers >= 2 then
+        if love.keyboard.isDown('up') then
+            player2.dy = -PADDLE_SPEED
+        elseif love.keyboard.isDown('down') then
+            player2.dy = PADDLE_SPEED
+        else
+            player2.dy = 0
+        end
+    end
+
+    -- for now, numHumans == 0 will allow arrows to control both paddles
+    if numHumanPlayers == 0 then
+        if love.keyboard.isDown('up') then
+            player2.dy = -PADDLE_SPEED
+            player1.dy = -PADDLE_SPEED
+        elseif love.keyboard.isDown('down') then
+            player2.dy = PADDLE_SPEED
+            player1.dy = PADDLE_SPEED
+        else
+            player2.dy = 0
+            player1.dy = 0
+        end
     end
 
     -- update our ball based on its DX and DY only if we're in play state;
@@ -278,12 +298,19 @@ function love.keypressed(key)
     if key == 'escape' then
         -- the function LÖVE2D uses to quit the application
         love.event.quit()
-    -- if we press enter during either the start or serve phase, it should
-    -- transition to the next appropriate state
-    elseif key == 'enter' or key == 'return' then
+
+    elseif key == '0' or key == '1' or key == '2' then
+        -- enter 0, 1 or 2 is only valid at the start, and sets the number of
+        -- human players
         if gameState == 'start' then
             gameState = 'serve'
-        elseif gameState == 'serve' then
+            numHumanPlayers = tonumber(key)
+        end
+
+    elseif key == 'enter' or key == 'return' or key == 'space' then
+        -- if we press enter during either the start or serve phase, it should
+        -- transition to the next appropriate state
+        if gameState == 'serve' then
             gameState = 'play'
         elseif gameState == 'done' then
             -- game is simply in a restart phase here, but will set the serving
@@ -321,7 +348,7 @@ function love.draw()
         -- UI messages
         love.graphics.setFont(smallFont)
         love.graphics.printf('Welcome to Pong!', 0, 10, VIRTUAL_WIDTH, 'center')
-        love.graphics.printf('Press Enter to begin!', 0, 20, VIRTUAL_WIDTH, 'center')
+        love.graphics.printf('How many humans playing (1, 2, or 0)?', 0, 20, VIRTUAL_WIDTH, 'center')
     elseif gameState == 'serve' then
         -- UI messages
         love.graphics.setFont(smallFont)
