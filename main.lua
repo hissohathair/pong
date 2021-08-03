@@ -55,7 +55,8 @@ PADDLE_HEIGHT = 20
 -- ball settings
 BALL_WIDTH = 4
 BALL_HEIGHT = 4
-BALL_ACCEL = 1.03
+BALL_ACCEL = 1.05 -- 1.03
+BALL_MAX_SPEED = VIRTUAL_WIDTH * 4
 
 --[[
     Called just once at the beginning of the game; used to set up
@@ -148,8 +149,10 @@ function love.update(dt)
         -- slightly increasing it, then altering the dy based on the position
         -- at which it collided, then playing a sound effect
         if ball:collides(player1) then
-            ball.dx = -ball.dx * BALL_ACCEL
+            ball.dx = math.min(-ball.dx * BALL_ACCEL, BALL_MAX_SPEED)
             ball.x = player1.x + player1.width
+            player1.hitCount = player1.hitCount + 1
+            print(string.format("P1 hit ball.dx=%d (max=%d)", ball.dx, BALL_MAX_SPEED))
 
             -- keep velocity going in the same direction, but randomize it
             if ball.dy < 0 then
@@ -161,8 +164,10 @@ function love.update(dt)
             sounds['paddle_hit']:play()
         end
         if ball:collides(player2) then
-            ball.dx = -ball.dx * BALL_ACCEL
+            ball.dx = math.max(-ball.dx * BALL_ACCEL, -BALL_MAX_SPEED)
             ball.x = player2.x - ball.width
+            player2.hitCount = player2.hitCount + 1
+            print(string.format("P2 hit ball.dx=%d (max=%d)", ball.dx, -BALL_MAX_SPEED))
 
             -- keep velocity going in the same direction, but randomize it
             if ball.dy < 0 then
@@ -206,6 +211,8 @@ function love.update(dt)
                 gameState = 'serve'
                 -- places the ball in the middle of the screen, no velocity
                 ball:reset()
+                player1:reset(false)
+                player2:reset(false)
             end
         end
 
@@ -226,6 +233,8 @@ function love.update(dt)
                 gameState = 'serve'
                 -- places the ball in the middle of the screen, no velocity
                 ball:reset()
+                player1:reset(false)
+                player2:reset(false)
             end
         end
     end
@@ -238,15 +247,15 @@ function love.update(dt)
     if numHumanPlayers == 1 then
         -- player 1 human; player 2 is computer
         player1:humanmove('w', 's', PADDLE_SPEED)
-        player2:automove(PADDLE_SPEED, ball)
+        player2:automove(PADDLE_SPEED, ball, dt)
     elseif numHumanPlayers == 2 then
         -- player 1 and 2 are human
         player1:humanmove('w', 's', PADDLE_SPEED)
         player2:humanmove('up', 'down', PADDLE_SPEED)
     else
         -- player 1 and 2 are computer
-        player1:automove(PADDLE_SPEED, ball)
-        player2:automove(PADDLE_SPEED, ball)
+        player1:automove(PADDLE_SPEED, ball, dt)
+        player2:automove(PADDLE_SPEED, ball, dt)
     end
 
     -- update our ball based on its DX and DY only if we're in play state;
@@ -299,9 +308,11 @@ function love.keypressed(key)
         elseif gameState == 'done' then
             -- game is simply in a restart phase here, but will set the serving
             -- player to the opponent of whomever won for fairness!
-            gameState = 'serve'
+            gameState = 'start'
 
             ball:reset()
+            player1:reset()
+            player2:reset()
 
             -- reset scores to 0
             player1Score = 0

@@ -29,10 +29,30 @@ Paddle = Class{}
 function Paddle:init(x, y, width, height, playerNum)
     self.x = x
     self.y = y
+    self.orig_x = x 
+    self.orig_y = y 
     self.width = width
     self.height = height
+    self.orig_width = width
+    self.orig_height = height 
     self.dy = 0
     self.playerNum = playerNum
+    self.hitCount = 0  -- how many times have we hit the ball?
+    self.ballIncoming = false  -- is ball heading towards us?
+    self.strategy = 'normal'
+end
+
+function Paddle:reset(resetPosition)
+    if resetPosition then
+        self.x = self.orig_x
+        self.y = self.orig_y
+    end
+    self.width = self.orig_width
+    self.height = self.orig_height
+    self.dy = 0
+    self.hitCount = 0
+    self.ballIncoming = false
+    self.strategy = 'normal'
 end
 
 function Paddle:update(dt)
@@ -59,7 +79,15 @@ end
     newest version of LÖVE2D, you can even draw rounded rectangles!
 ]]
 function Paddle:render()
+    -- go red if we're cheating, white otherwise
+    r, g, b, a = love.graphics.getColor()
+    if self.strategy == 'normal' then
+        love.graphics.setColor(1, 1, 1, 1)
+    else
+        love.graphics.setColor(1, 0, 0, 1)
+    end
     love.graphics.rectangle('fill', self.x, self.y, self.width, self.height)
+    love.graphics.setColor(r, g, b, a)
 end
 
 --[[
@@ -80,20 +108,96 @@ end
     Called when the computer is controlling the paddle. For now, we pass in
     the paddle_speed (same as for humans) and the ball's current position.
 ]]
-function Paddle:automove(paddle_speed, ball)
+function Paddle:automove(paddle_speed, ball, dt)
     -- simple method: track the ball, try and hit in the middle of the paddle
     -- For a bit of added "realism", we'll only move when the ball is heading 
     -- our way
-    if (self.playerNum == 1 and ball.dx < 0) or (self.playerNum ==2 and ball.dx > 0) then
-        if ball.y < self.y + ball.height then
-            self.dy = -paddle_speed
-        elseif ball.y > self.y + self.height - ball.height then
-            self.dy = paddle_speed
-        else
-            self.dy = 0
+    if (self.playerNum == 1 and ball.dx < 0) or (self.playerNum == 2 and ball.dx > 0) then
+        -- ball is heading towards us, is that a change in direction?
+        directionChanged = (self.ballIncoming == false)
+        self.ballIncoming = true
+
+        -- When direction has changed, pick the automove strategy
+        -- Every third hit, take a 50% chance on chosing a "cheat" strategy
+        if directionChanged and (self.hitCount % 3 == 2) and (math.random(1, 2) == 1) then
+            self.strategy = 'cheat' .. math.random(1, 3)
+            print(string.format("Player %d decided to %s on hit %d", self.playerNum, self.strategy, self.hitCount))
+        elseif directionChanged then
+            self.strategy = 'normal'
         end
+
+
+        if self.strategy == 'normal' then
+            -- normal strategy: track the ball height
+            if ball.y < self.y + ball.height then
+                self.dy = -paddle_speed
+            elseif ball.y > self.y + self.height - ball.height then
+                self.dy = paddle_speed
+            else
+                self.dy = 0
+            end
+
+        elseif self.strategy == 'cheat1' then
+            -- cheat strategy: make the ball too big to miss
+            -- Also, move the paddle without regards to speed
+            ball_centre = ball.y + (ball.height / 2)
+            paddle_centre = self.y + (self.height / 2)
+            self.y = self.y + (ball_centre - paddle_centre)
+
+            -- ball is coming to me, so make it bigger
+            ball.width = ball.width + 1
+            ball.height = ball.height + 1
+            ball.x = ball.x - 1
+            ball.y = ball.y - 1
+
+        elseif self.strategy == 'cheat2' then
+            -- cheat strategy: track the ball height (like normal), but
+            -- also make the paddle bigger
+            if ball.y < self.y + ball.height then
+                self.dy = -paddle_speed * 2
+                self.height = self.height + (paddle_speed * dt * 2)
+            elseif ball.y > self.y + self.height - ball.height then
+                self.dy = paddle_speed / 2
+                self.height = self.height + (paddle_speed * dt * 2)
+            else
+                self.dy = 0
+            end
+
+        elseif self.strategy == 'cheat3' then
+            -- cheat strategy: move really fast
+            self.y = ball.y - (self.height / 2)
+
+        else
+            -- whoops -- uncoded cheat, reset to normal
+            self.strategy = 'normal'
+        end
+
     else
         self.dy = 0
+        self.ballIncoming = false
+
+        -- if our last strategy was to cheat, undo the damage
+        if self.strategy == 'cheat1' then
+            ball.width = math.max(ball.orig_width, ball.width - 2)
+            ball.height = math.max(ball.orig_height, ball.height - 2)
+            if ball.width == ball.orig_width and ball.height == ball.orig_height then
+                self.strategy = 'normal'
+            end
+        elseif self.strategy == 'cheat2' then
+            self.height = math.max(self.orig_height, self.height - (paddle_speed * dt * 2))
+            self.dy = paddle_speed
+            if self.height == self.orig_height then
+                self.strategy = 'normal'
+            end
+
+        else
+            -- in normal mode, head to the centre-ish, but only if ball that way
+            if self.y < VIRTUAL_HEIGHT * 0.3 and ball.y > self.y + self.height then
+                self.dy = paddle_speed
+            elseif self.y > VIRTUAL_HEIGHT * 0.6 and ball.y < self.y then
+                self.dy = -paddle_speed
+            end
+        end
     end
 end
 
