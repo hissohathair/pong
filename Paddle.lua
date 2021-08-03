@@ -26,12 +26,13 @@ Paddle = Class{}
     have their own x, y, width, and height values, thus serving as containers
     for data. In this sense, they're very similar to structs in C.
 ]]
-function Paddle:init(x, y, width, height)
+function Paddle:init(x, y, width, height, playerNum)
     self.x = x
     self.y = y
     self.width = width
     self.height = height
     self.dy = 0
+    self.playerNum = playerNum
 end
 
 function Paddle:update(dt)
@@ -79,11 +80,11 @@ end
     Called when the computer is controlling the paddle. For now, we pass in
     the paddle_speed (same as for humans) and the ball's current position.
 ]]
-function Paddle:automove(paddle_speed, ball, playerNum)
+function Paddle:automove(paddle_speed, ball)
     -- simple method: track the ball, try and hit in the middle of the paddle
     -- For a bit of added "realism", we'll only move when the ball is heading 
     -- our way
-    if (playerNum == 1 and ball.dx < 0) or (playerNum ==2 and ball.dx > 0) then
+    if (self.playerNum == 1 and ball.dx < 0) or (self.playerNum ==2 and ball.dx > 0) then
         if ball.y < self.y + ball.height then
             self.dy = -paddle_speed
         elseif ball.y > self.y + self.height - ball.height then
