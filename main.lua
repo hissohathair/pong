@@ -51,12 +51,16 @@ VIRTUAL_HEIGHT = 243
 PADDLE_SPEED = 200
 PADDLE_WIDTH = 5
 PADDLE_HEIGHT = 20
+MAX_SCORE = 10
 
 -- ball settings
 BALL_WIDTH = 4
 BALL_HEIGHT = 4
 BALL_ACCEL = 1.05 -- 1.03
 BALL_MAX_SPEED = VIRTUAL_WIDTH * 4
+
+-- used to decide when computer player should serve
+nextServeTime = 0
 
 --[[
     Called just once at the beginning of the game; used to set up
@@ -144,7 +148,30 @@ end
     across system hardware.
 ]]
 function love.update(dt)
-    if gameState == 'play' then
+    if gameState == 'serve' then
+        -- if the serving player is computer controlled, we should start
+        -- the serve on our own
+        if numHumanPlayers == 0 or (numHumanPlayers == 1 and servingPlayer == 2) then
+            if nextServeTime == 0 then
+                -- start serve 3 seconds from now
+                nextServeTime = love.timer.getTime() + 3.0
+
+            elseif nextServeTime > 0 and love.timer.getTime() >= nextServeTime then
+                -- before switching to play, initialize ball's velocity based
+                -- on player who last scored
+                -- TODO: This code is duplicated and should be refactored
+                ball.dy = math.random(-50, 50)
+                if servingPlayer == 1 then
+                    ball.dx = math.random(140, 200)
+                else
+                    ball.dx = -math.random(140, 200)
+                end
+                gameState = 'play'
+                nextServeTime = 0
+            end
+        end
+
+    elseif gameState == 'play' then
         -- detect ball collision with paddles, reversing dx if true and
         -- slightly increasing it, then altering the dy based on the position
         -- at which it collided, then playing a sound effect
@@ -152,7 +179,6 @@ function love.update(dt)
             ball.dx = math.min(-ball.dx * BALL_ACCEL, BALL_MAX_SPEED)
             ball.x = player1.x + player1.width
             player1.hitCount = player1.hitCount + 1
-            print(string.format("P1 hit ball.dx=%d (max=%d)", ball.dx, BALL_MAX_SPEED))
 
             -- keep velocity going in the same direction, but randomize it
             if ball.dy < 0 then
@@ -167,7 +193,6 @@ function love.update(dt)
             ball.dx = math.max(-ball.dx * BALL_ACCEL, -BALL_MAX_SPEED)
             ball.x = player2.x - ball.width
             player2.hitCount = player2.hitCount + 1
-            print(string.format("P2 hit ball.dx=%d (max=%d)", ball.dx, -BALL_MAX_SPEED))
 
             -- keep velocity going in the same direction, but randomize it
             if ball.dy < 0 then
@@ -203,7 +228,7 @@ function love.update(dt)
 
             -- if we've reached a score of 10, the game is over; set the
             -- state to done so we can show the victory message
-            if player2Score == 10 then
+            if player2Score == MAX_SCORE then
                 winningPlayer = 2
                 gameState = 'done'
                 numHumanPlayers = 2
@@ -225,7 +250,7 @@ function love.update(dt)
 
             -- if we've reached a score of 10, the game is over; set the
             -- state to done so we can show the victory message
-            if player1Score == 10 then
+            if player1Score == MAX_SCORE then
                 winningPlayer = 1
                 gameState = 'done'
                 numHumanPlayers = 2
@@ -349,7 +374,12 @@ function love.draw()
         love.graphics.setFont(smallFont)
         love.graphics.printf('Player ' .. tostring(servingPlayer) .. "'s serve!", 
             0, 10, VIRTUAL_WIDTH, 'center')
-        love.graphics.printf('Press Enter to serve!', 0, 20, VIRTUAL_WIDTH, 'center')
+        if numHumanPlayers == 0 or (numHumanPlayers == 1 and servingPlayer == 2) then
+            love.graphics.printf(string.format('Computer to serve in %d!', nextServeTime - love.timer.getTime() + 0.5), 
+                0, 20, VIRTUAL_WIDTH, 'center')
+        else
+            love.graphics.printf('Press Enter to serve!', 0, 20, VIRTUAL_WIDTH, 'center')
+        end
     elseif gameState == 'play' then
         -- no UI messages to display in play
     elseif gameState == 'done' then
