@@ -18,7 +18,11 @@ Ball = Class{}
 BALL_WIDTH = 4
 BALL_HEIGHT = 4
 BALL_ACCEL = 1.15 -- 1.03
-BALL_MAX_FACTOR = 8
+
+-- max speed of a ball, in pixels per second, will be the screen's width
+-- multiplied by this factor. Therefore the default value of 4 should mean
+-- a ball can traverse the horizontal in 1/4 of a second
+BALL_MAX_FACTOR = 4
 
 --[[
     Ball:init
@@ -82,16 +86,61 @@ end
 --[[
     Ball:bounce - Reverses direction of a ball, called when it collides with a
     paddle
+
+    paddle: Instance of `Paddle` class, that we just collided with
 ]]
-function Ball:bounce(new_x)
-    ball.dx = math.min(-ball.dx * BALL_ACCEL, ball.max_speed)
-    ball.x = new_x
-    
-    -- keep velocity going in the same direction, but randomize it
-    if ball.dy < 0 then
-        ball.dy = -math.random(10, 150)
+function Ball:bounce(paddle)
+    -- snap to position. Which paddle did we hit?
+    if self.x < self.screen_width / 2 then
+        -- paddle1
+        self.x = paddle.x + paddle.width
     else
-        ball.dy = math.random(10, 150)
+        self.x = paddle.x - self.width
+    end
+
+    -- direction to head? 1 (right) or -1 (left)
+    direction = 0
+    if self.dx < 0 then
+        direction = 1
+    elseif self.dx > 0 then
+        direction = -1
+    end
+
+    -- calculate current speed, and what the new speed should be
+    current_speed = math.sqrt(math.pow(self.dx, 2) + math.pow(self.dy, 2))
+    new_speed = math.min(current_speed * BALL_ACCEL, self.max_speed)
+
+    -- where did we hit the paddle?
+    --  0.0  -> centre of ball hit very top of paddle
+    --  0.5  -> centre of ball hit middle of paddle
+    --  1.0  -> centre of ball hit very bottom of paddle
+    ball_centre = self.y + self.height / 2
+    pad_pos = (paddle.y + paddle.height - ball_centre) / paddle.height
+
+    -- what should bounce angle be?
+    --  0.0  -> 45º
+    --  0.25 -> 68º
+    --  0.50 -> 90º
+    --  0.75 -> 113º
+    --  1.0  -> 135º
+    -- but in radians: radians = degrees * (π / 180)
+    deflection_angle = math.rad(45 + (90 * pad_pos))
+
+    if true then
+        -- so want to move at new_speed at deflection_angle away from the
+        -- vertical paddle we hit
+        ball.dx = math.cos(deflection_angle) * current_speed * direction
+        ball.dy = math.sin(deflection_angle) * current_speed * direction
+    else
+        -- old code
+        ball.dx = math.min(-ball.dx * BALL_ACCEL, ball.max_speed)
+    
+        -- keep velocity going in the same direction, but randomize it
+        if ball.dy < 0 then
+            ball.dy = -math.random(10, 150)
+        else
+            ball.dy = math.random(10, 150)
+        end
     end
 end
 

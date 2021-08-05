@@ -176,11 +176,11 @@ function love.update(dt)
         -- slightly increasing it, then altering the dy based on the position
         -- at which it collided, then playing a sound effect
         if ball:collides(paddle1) then
-            ball:bounce(paddle1.x + paddle1.width)
+            ball:bounce(paddle1)
             sounds['paddle_hit']:play()
         end
         if ball:collides(paddle2) then
-            ball:bounce(paddle2.x - ball.width)
+            ball:bounce(paddle2)
             sounds['paddle_hit']:play()
         end
 
