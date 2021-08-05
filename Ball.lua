@@ -14,13 +14,22 @@
 
 Ball = Class{}
 
-function Ball:init(x, y, width, height)
-    self.x = x
-    self.y = y
-    self.width = width
-    self.height = height
-    self.orig_width = width
-    self.orig_height = height
+-- ball settings
+BALL_WIDTH = 4
+BALL_HEIGHT = 4
+BALL_ACCEL = 1.15 -- 1.03
+BALL_MAX_SPEED = 8
+
+function Ball:init(virtual_width, virtual_height)
+    self.x = virtual_width / 2 - BALL_WIDTH / 2
+    self.y = virtual_height / 2 - BALL_HEIGHT / 2
+    self.start_x = x 
+    self.start_y = y 
+    self.width = BALL_WIDTH
+    self.height = BALL_HEIGHT
+    self.virtual_width = virtual_width
+    self.virtual_height = virtual_height
+    self.max_speed = virtual_width * BALL_MAX_SPEED
 
     -- these variables are for keeping track of our velocity on both the
     -- X and Y axis, since the ball can move in two dimensions
@@ -50,18 +59,41 @@ function Ball:collides(paddle)
 end
 
 --[[
+    Reverses direction of a ball, called when it has been hit by a paddle
+]]
+function Ball:bounce(new_x)
+    ball.dx = math.min(-ball.dx * BALL_ACCEL, ball.max_speed)
+    ball.x = new_x
+    
+    -- keep velocity going in the same direction, but randomize it
+    if ball.dy < 0 then
+        ball.dy = -math.random(10, 150)
+    else
+        ball.dy = math.random(10, 150)
+    end
+end
+
+--[[
+    Called when the ball has hit either the top or the bottom of the screen,
+    and it needs to deflect
+]]
+function Ball:deflect(new_y)
+    ball.y = new_y
+    ball.dy = -ball.dy
+end
+
+--[[
     Places the ball in the middle of the screen, with no movement.
 ]]
 function Ball:reset()
-    self.width = self.orig_width
-    self.height = self.orig_height
-    self.x = (VIRTUAL_WIDTH / 2) - (self.width / 2)
-    self.y = (VIRTUAL_HEIGHT / 2) - (self.height / 2)
+    self.x = self.start_x
+    self.y = self.start_y
     self.dx = 0
     self.dy = 0
 end
 
 function Ball:update(dt)
+    -- todo: not sure last_x/y needs to be member variables
     self.last_x = self.x 
     self.last_y = self.y 
     self.x = self.x + self.dx * dt
@@ -69,10 +101,11 @@ function Ball:update(dt)
 
     -- when the ball is moving really fast, check to see if it passes a paddle
     -- boundary and "clip" it if it does
+    -- TODO: these hard coded values need to go
     if self.last_x > 10 and self.x < 10 then
         self.x = 10
-    elseif self.last_x < VIRTUAL_WIDTH - 10 and self.x > VIRTUAL_WIDTH - 10 then
-        self.x = VIRTUAL_WIDTH - 10
+    elseif self.last_x < self.virtual_width - 10 and self.x > self.virtual_width - 10 then
+        self.x = self.virtual_width - 10
     end
 end
 

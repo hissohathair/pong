@@ -53,12 +53,6 @@ PADDLE_WIDTH = 5
 PADDLE_HEIGHT = 20
 MAX_SCORE = 10
 
--- ball settings
-BALL_WIDTH = 4
-BALL_HEIGHT = 4
-BALL_ACCEL = 1.15 -- 1.03
-BALL_MAX_SPEED = VIRTUAL_WIDTH * 8
-
 -- used to decide when computer player should serve
 nextServeTime = 0
 
@@ -106,8 +100,8 @@ function love.load()
     paddle1 = Paddle(10, 30, PADDLE_WIDTH, PADDLE_HEIGHT)
     paddle2 = Paddle(VIRTUAL_WIDTH - 10, VIRTUAL_HEIGHT - 30, PADDLE_WIDTH, PADDLE_HEIGHT)
 
-    -- place a ball in the middle of the screen
-    ball = Ball(VIRTUAL_WIDTH / 2 - BALL_WIDTH / 2, VIRTUAL_HEIGHT / 2 - BALL_HEIGHT / 2, BALL_WIDTH, BALL_HEIGHT)
+    -- create ball, the Ball class will place in the middle of the screen
+    ball = Ball(VIRTUAL_WIDTH, VIRTUAL_HEIGHT)
 
     -- initialize score variables
     player1Score = 0
@@ -176,44 +170,24 @@ function love.update(dt)
         -- slightly increasing it, then altering the dy based on the position
         -- at which it collided, then playing a sound effect
         if ball:collides(paddle1) then
-            ball.dx = math.min(-ball.dx * BALL_ACCEL, BALL_MAX_SPEED)
-            ball.x = paddle1.x + paddle1.width
-
-            -- keep velocity going in the same direction, but randomize it
-            if ball.dy < 0 then
-                ball.dy = -math.random(10, 150)
-            else
-                ball.dy = math.random(10, 150)
-            end
-
+            ball:bounce(paddle1.x + paddle1.width)
             sounds['paddle_hit']:play()
         end
         if ball:collides(paddle2) then
-            ball.dx = math.max(-ball.dx * BALL_ACCEL, -BALL_MAX_SPEED)
-            ball.x = paddle2.x - ball.width
-
-            -- keep velocity going in the same direction, but randomize it
-            if ball.dy < 0 then
-                ball.dy = -math.random(10, 150)
-            else
-                ball.dy = math.random(10, 150)
-            end
-
+            ball:bounce(paddle2.x - ball.width)
             sounds['paddle_hit']:play()
         end
 
         -- detect upper and lower screen boundary collision, playing a sound
         -- effect and reversing dy if true
         if ball.y <= 0 then
-            ball.y = 0
-            ball.dy = -ball.dy
+            ball:deflect(0)
             sounds['wall_hit']:play()
         end
 
         -- -ball.height to account for the ball's size
         if ball.y >= VIRTUAL_HEIGHT - ball.height then
-            ball.y = VIRTUAL_HEIGHT - ball.height
-            ball.dy = -ball.dy
+            ball:deflect(VIRTUAL_HEIGHT - ball.height)
             sounds['wall_hit']:play()
         end
 
