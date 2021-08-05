@@ -19,6 +19,8 @@ function Ball:init(x, y, width, height)
     self.y = y
     self.width = width
     self.height = height
+    self.orig_width = width
+    self.orig_height = height
 
     -- these variables are for keeping track of our velocity on both the
     -- X and Y axis, since the ball can move in two dimensions
@@ -51,15 +53,27 @@ end
     Places the ball in the middle of the screen, with no movement.
 ]]
 function Ball:reset()
-    self.x = VIRTUAL_WIDTH / 2 - 2
-    self.y = VIRTUAL_HEIGHT / 2 - 2
+    self.width = self.orig_width
+    self.height = self.orig_height
+    self.x = (VIRTUAL_WIDTH / 2) - (self.width / 2)
+    self.y = (VIRTUAL_HEIGHT / 2) - (self.height / 2)
     self.dx = 0
     self.dy = 0
 end
 
 function Ball:update(dt)
+    self.last_x = self.x 
+    self.last_y = self.y 
     self.x = self.x + self.dx * dt
     self.y = self.y + self.dy * dt
+
+    -- when the ball is moving really fast, check to see if it passes a paddle
+    -- boundary and "clip" it if it does
+    if self.last_x > 10 and self.x < 10 then
+        self.x = 10
+    elseif self.last_x < VIRTUAL_WIDTH - 10 and self.x > VIRTUAL_WIDTH - 10 then
+        self.x = VIRTUAL_WIDTH - 10
+    end
 end
 
 function Ball:render()
