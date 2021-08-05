@@ -18,28 +18,49 @@ Ball = Class{}
 BALL_WIDTH = 4
 BALL_HEIGHT = 4
 BALL_ACCEL = 1.15 -- 1.03
-BALL_MAX_SPEED = 8
+BALL_MAX_FACTOR = 8
 
-function Ball:init(virtual_width, virtual_height)
-    self.x = virtual_width / 2 - BALL_WIDTH / 2
-    self.y = virtual_height / 2 - BALL_HEIGHT / 2
-    self.start_x = x 
-    self.start_y = y 
+--[[
+    Ball:init
+
+    screen_width, screen_height: Size of screen in pixels
+    left_edge, right_edge: Where the paddles are, in pixels
+]]
+function Ball:init(screen_width, screen_height, left_edge, right_edge)
+    -- ball starts in center of screen
+    self.start_x = screen_width / 2 - BALL_WIDTH / 2
+    self.start_y = screen_height / 2 - BALL_HEIGHT / 2
+
+    -- remember these - needed below
+    self.left_edge = left_edge
+    self.right_edge = right_edge
+    self.screen_width = screen_width
+    self.screen_height = screen_height
+
+    -- ball class controls these
     self.width = BALL_WIDTH
     self.height = BALL_HEIGHT
-    self.virtual_width = virtual_width
-    self.virtual_height = virtual_height
-    self.max_speed = virtual_width * BALL_MAX_SPEED
+    self.max_speed = screen_width * BALL_MAX_FACTOR
 
-    -- these variables are for keeping track of our velocity on both the
-    -- X and Y axis, since the ball can move in two dimensions
-    self.dy = 0
-    self.dx = 0
+    -- We also have x, y, and dx, dy (for movement). They are initialised
+    -- by reset()
+    self:reset()
 end
 
 --[[
-    Expects a paddle as an argument and returns true or false, depending
-    on whether their rectangles overlap.
+    Ball:reset: Places the ball in the middle of the screen, with no movement
+]]
+function Ball:reset()
+    self.x = self.start_x
+    self.y = self.start_y
+    self.dx = 0
+    self.dy = 0
+end
+
+
+--[[
+    Ball:collides: Expects a paddle as an argument and returns true or false,
+    depending on whether their rectangles overlap.
 ]]
 function Ball:collides(paddle)
     -- first, check to see if the left edge of either is farther to the right
@@ -59,7 +80,8 @@ function Ball:collides(paddle)
 end
 
 --[[
-    Reverses direction of a ball, called when it has been hit by a paddle
+    Ball:bounce: Reverses direction of a ball, called when it collides with a
+    paddle
 ]]
 function Ball:bounce(new_x)
     ball.dx = math.min(-ball.dx * BALL_ACCEL, ball.max_speed)
@@ -74,8 +96,8 @@ function Ball:bounce(new_x)
 end
 
 --[[
-    Called when the ball has hit either the top or the bottom of the screen,
-    and it needs to deflect
+    Ball:deflect: Called when the ball has hit either the top or the bottom of
+    the screen, and it needs to deflect
 ]]
 function Ball:deflect(new_y)
     ball.y = new_y
@@ -83,29 +105,25 @@ function Ball:deflect(new_y)
 end
 
 --[[
-    Places the ball in the middle of the screen, with no movement.
-]]
-function Ball:reset()
-    self.x = self.start_x
-    self.y = self.start_y
-    self.dx = 0
-    self.dy = 0
-end
+    Ball:update: Called each frame to update position of the ball
 
+    dt:     Delta time, in seconds, since last update
+]]
 function Ball:update(dt)
-    -- todo: not sure last_x/y needs to be member variables
-    self.last_x = self.x 
-    self.last_y = self.y 
+    last_x = self.x 
+    last_y = self.y 
     self.x = self.x + self.dx * dt
     self.y = self.y + self.dy * dt
+
+    -- TODO: Bug here -- self.y could be off screen
 
     -- when the ball is moving really fast, check to see if it passes a paddle
     -- boundary and "clip" it if it does
     -- TODO: these hard coded values need to go
-    if self.last_x > 10 and self.x < 10 then
-        self.x = 10
-    elseif self.last_x < self.virtual_width - 10 and self.x > self.virtual_width - 10 then
-        self.x = self.virtual_width - 10
+    if last_x > self.left_edge and self.x < self.left_edge then
+        self.x = self.left_edge
+    elseif last_x < self.right_edge and self.x > self.right_edge then
+        self.x = self.right_edge
     end
 end
 

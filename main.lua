@@ -101,7 +101,7 @@ function love.load()
     paddle2 = Paddle(VIRTUAL_WIDTH - 10, VIRTUAL_HEIGHT - 30, PADDLE_WIDTH, PADDLE_HEIGHT)
 
     -- create ball, the Ball class will place in the middle of the screen
-    ball = Ball(VIRTUAL_WIDTH, VIRTUAL_HEIGHT)
+    ball = Ball(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, 10, VIRTUAL_WIDTH - 10)
 
     -- initialize score variables
     player1Score = 0
