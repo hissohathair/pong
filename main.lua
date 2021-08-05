@@ -31,6 +31,9 @@ push = require 'push'
 -- https://github.com/vrld/hump/blob/master/class.lua
 Class = require 'class'
 
+-- new Player class, which controls the logic for moving Paddles
+require 'Player'
+
 -- our Paddle class, which stores position and dimensions for each Paddle
 -- and the logic for rendering them
 require 'Paddle'
@@ -106,7 +109,13 @@ function love.load()
     -- create ball, the Ball class will place in the middle of the screen
     ball = Ball(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, PADDLE_GUTTER, VIRTUAL_WIDTH - PADDLE_GUTTER)
 
-    -- initialize score variables
+    -- intialize players; a player needs to know about the paddle it controls,
+    -- and the size of the ball (which won't change)
+    player1 = Player(1, paddle1, ball.height)
+    player2 = Player(2, paddle2, ball.height)
+
+    -- initialize score variables; scores are kept separate because we can't
+    -- have players in direct control of their scores
     player1Score = 0
     player2Score = 0
 
@@ -240,16 +249,16 @@ function love.update(dt)
 
     if numHumanPlayers == 1 then
         -- player 1 human; player 2 is computer
-        paddle1:humanmove('w', 's', PADDLE_SPEED)
-        paddle2:automove(PADDLE_SPEED, ball, dt)
+        paddle1.dy = player1:humanmove(PADDLE_SPEED, 'w', 's')
+        paddle2.dy = player2:automove(PADDLE_SPEED, ball.x, ball.y)
     elseif numHumanPlayers == 2 then
         -- player 1 and 2 are human
-        paddle1:humanmove('w', 's', PADDLE_SPEED)
-        paddle2:humanmove('up', 'down', PADDLE_SPEED)
+        paddle1.dy = player1:humanmove(PADDLE_SPEED, 'w', 's')
+        paddle2.dy = player2:humanmove(PADDLE_SPEED, 'up', 'down')
     else
         -- player 1 and 2 are computer
-        paddle1:automove(PADDLE_SPEED, ball, dt)
-        paddle2:automove(PADDLE_SPEED, ball, dt)
+        paddle1.dy = player1:automove(PADDLE_SPEED, ball.x, ball.y)
+        paddle2.dy = player2:automove(PADDLE_SPEED, ball.x, ball.y)
     end
 
     -- update our ball based on its DX and DY only if we're in play state;

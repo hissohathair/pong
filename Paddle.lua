@@ -68,33 +68,3 @@ end
 function Paddle:render()
     love.graphics.rectangle('fill', self.x, self.y, self.width, self.height)
 end
-
---[[
-    Called to allow the human player to move the paddle. Pass in the key
-    for `up` and `down` paddle based on which player (1 or 2) is moving
-]]
-function Paddle:humanmove(upkey, downkey, paddle_speed)
-    if love.keyboard.isDown(upkey) then
-        self.dy = -paddle_speed
-    elseif love.keyboard.isDown(downkey) then
-        self.dy = paddle_speed
-    else
-        self.dy = 0
-    end
-end
-
---[[
-    Called when the computer is controlling the paddle. For now, we pass in
-    the paddle_speed (same as for humans) and the ball's current position.
-]]
-function Paddle:automove(paddle_speed, ball, dt)
-    -- simple method: track the ball, try and hit in the middle of the paddle
-    if ball.y < self.y + ball.height then
-        self.dy = -paddle_speed
-    elseif ball.y > self.y + self.height - ball.height then
-        self.dy = paddle_speed
-    else
-        self.dy = 0
-    end
-end
-
