@@ -139,32 +139,29 @@ function Paddle:automove(paddle_speed, ball, dt)
 
         elseif self.strategy == 'cheat1' then
             -- cheat strategy: make the ball too big to miss
-            -- Also, move the paddle without regards to speed
-            ball_centre = ball.y + (ball.height / 2)
-            paddle_centre = self.y + (self.height / 2)
-            self.y = self.y + (ball_centre - paddle_centre)
-
-            -- ball is coming to me, so make it bigger
             ball.width = ball.width + 1
             ball.height = ball.height + 1
             ball.x = ball.x - 1
             ball.y = ball.y - 1
 
+            -- Also, move the paddle without regards to speed
+            ball_centre = ball.y + (ball.height / 2)
+            paddle_centre = self.y + (self.height / 2)
+            self.y = self.y + (ball_centre - paddle_centre)
+
         elseif self.strategy == 'cheat2' then
-            -- cheat strategy: track the ball height (like normal), but
-            -- also make the paddle bigger
-            if ball.y < self.y + ball.height then
+            -- cheat strategy: ignore the ball. Rapidly grow the paddle instead
+            if self.y > 1 then
                 self.dy = -paddle_speed * 2
-                self.height = self.height + (paddle_speed * dt * 2)
-            elseif ball.y > self.y + self.height - ball.height then
-                self.dy = paddle_speed / 2
-                self.height = self.height + (paddle_speed * dt * 2)
             else
                 self.dy = 0
             end
+            if self.height < VIRTUAL_HEIGHT then
+                self.height = self.height + (paddle_speed * dt * 2)
+            end
 
         elseif self.strategy == 'cheat3' then
-            -- cheat strategy: move really fast
+            -- cheat strategy: move perfectly and without regard to paddle_speed
             self.y = ball.y - (self.height / 2)
 
         else
@@ -178,17 +175,27 @@ function Paddle:automove(paddle_speed, ball, dt)
 
         -- if our last strategy was to cheat, undo the damage
         if self.strategy == 'cheat1' then
+            -- shrinl the ball to regular size again
             ball.width = math.max(ball.orig_width, ball.width - 2)
             ball.height = math.max(ball.orig_height, ball.height - 2)
             if ball.width == ball.orig_width and ball.height == ball.orig_height then
                 self.strategy = 'normal'
             end
         elseif self.strategy == 'cheat2' then
+            -- shrink the paddle to regular size, and track the ball a little
             self.height = math.max(self.orig_height, self.height - (paddle_speed * dt * 2))
-            self.dy = paddle_speed
+            if ball.y > self.y + self.orig_height then
+                self.dy = paddle_speed
+            elseif ball.y < self.y then
+                self.dy = -paddle_speed
+            end
             if self.height == self.orig_height then
                 self.strategy = 'normal'
             end
+
+        elseif self.strategy == 'cheat3' then
+            -- nothing to do really, just end the cheat mode
+            self.strategy = 'normal'
 
         else
             -- in normal mode, head to the centre-ish, but only if ball that way
