@@ -103,8 +103,8 @@ function love.load()
     -- initialize our player paddles; make them global so that they can be
     -- detected by other functions and modules
     numHumanPlayers = 2
-    player1 = Paddle(10, 30, PADDLE_WIDTH, PADDLE_HEIGHT)
-    player2 = Paddle(VIRTUAL_WIDTH - 10, VIRTUAL_HEIGHT - 30, PADDLE_WIDTH, PADDLE_HEIGHT)
+    paddle1 = Paddle(10, 30, PADDLE_WIDTH, PADDLE_HEIGHT)
+    paddle2 = Paddle(VIRTUAL_WIDTH - 10, VIRTUAL_HEIGHT - 30, PADDLE_WIDTH, PADDLE_HEIGHT)
 
     -- place a ball in the middle of the screen
     ball = Ball(VIRTUAL_WIDTH / 2 - BALL_WIDTH / 2, VIRTUAL_HEIGHT / 2 - BALL_HEIGHT / 2, BALL_WIDTH, BALL_HEIGHT)
@@ -175,9 +175,9 @@ function love.update(dt)
         -- detect ball collision with paddles, reversing dx if true and
         -- slightly increasing it, then altering the dy based on the position
         -- at which it collided, then playing a sound effect
-        if ball:collides(player1) then
+        if ball:collides(paddle1) then
             ball.dx = math.min(-ball.dx * BALL_ACCEL, BALL_MAX_SPEED)
-            ball.x = player1.x + player1.width
+            ball.x = paddle1.x + paddle1.width
 
             -- keep velocity going in the same direction, but randomize it
             if ball.dy < 0 then
@@ -188,9 +188,9 @@ function love.update(dt)
 
             sounds['paddle_hit']:play()
         end
-        if ball:collides(player2) then
+        if ball:collides(paddle2) then
             ball.dx = math.max(-ball.dx * BALL_ACCEL, -BALL_MAX_SPEED)
-            ball.x = player2.x - ball.width
+            ball.x = paddle2.x - ball.width
 
             -- keep velocity going in the same direction, but randomize it
             if ball.dy < 0 then
@@ -234,8 +234,8 @@ function love.update(dt)
                 gameState = 'serve'
                 -- places the ball in the middle of the screen, no velocity
                 ball:reset()
-                player1:reset()
-                player2:reset()
+                paddle1:reset()
+                paddle2:reset()
             end
         end
 
@@ -256,8 +256,8 @@ function love.update(dt)
                 gameState = 'serve'
                 -- places the ball in the middle of the screen, no velocity
                 ball:reset()
-                player1:reset()
-                player2:reset()
+                paddle1:reset()
+                paddle2:reset()
             end
         end
     end
@@ -269,16 +269,16 @@ function love.update(dt)
 
     if numHumanPlayers == 1 then
         -- player 1 human; player 2 is computer
-        player1:humanmove('w', 's', PADDLE_SPEED)
-        player2:automove(PADDLE_SPEED, ball, dt)
+        paddle1:humanmove('w', 's', PADDLE_SPEED)
+        paddle2:automove(PADDLE_SPEED, ball, dt)
     elseif numHumanPlayers == 2 then
         -- player 1 and 2 are human
-        player1:humanmove('w', 's', PADDLE_SPEED)
-        player2:humanmove('up', 'down', PADDLE_SPEED)
+        paddle1:humanmove('w', 's', PADDLE_SPEED)
+        paddle2:humanmove('up', 'down', PADDLE_SPEED)
     else
         -- player 1 and 2 are computer
-        player1:automove(PADDLE_SPEED, ball, dt)
-        player2:automove(PADDLE_SPEED, ball, dt)
+        paddle1:automove(PADDLE_SPEED, ball, dt)
+        paddle2:automove(PADDLE_SPEED, ball, dt)
     end
 
     -- update our ball based on its DX and DY only if we're in play state;
@@ -287,8 +287,8 @@ function love.update(dt)
         ball:update(dt)
     end
 
-    player1:update(dt)
-    player2:update(dt)
+    paddle1:update(dt)
+    paddle2:update(dt)
 end
 
 --[[
@@ -334,8 +334,8 @@ function love.keypressed(key)
             gameState = 'start'
 
             ball:reset()
-            player1:reset()
-            player2:reset()
+            paddle1:reset()
+            paddle2:reset()
 
             -- reset scores to 0
             player1Score = 0
@@ -392,8 +392,8 @@ function love.draw()
     -- show the score before ball is rendered so it can move over the text
     displayScore()
     
-    player1:render()
-    player2:render()
+    paddle1:render()
+    paddle2:render()
     ball:render()
 
     -- display FPS for debugging; simply comment out to remove
