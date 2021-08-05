@@ -56,8 +56,8 @@ MAX_SCORE = 10
 -- ball settings
 BALL_WIDTH = 4
 BALL_HEIGHT = 4
-BALL_ACCEL = 1.05 -- 1.03
-BALL_MAX_SPEED = VIRTUAL_WIDTH * 4
+BALL_ACCEL = 1.15 -- 1.03
+BALL_MAX_SPEED = VIRTUAL_WIDTH * 8
 
 -- used to decide when computer player should serve
 nextServeTime = 0

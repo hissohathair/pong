@@ -28,7 +28,8 @@ But as a consequence, stalemate occurs.
 
 Current plan:
 
-* See if increased `MAX_BALL_SPEED` reduces stalemate
+* ~~See if increased `MAX_BALL_SPEED` reduces stalemate~~ 
+  Outcome: Nope. Might make it worse. And it's boring to look at.
 * Refactor some of the code in preparation for changing ball and paddle
   behaviour
 
