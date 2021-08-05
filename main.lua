@@ -103,8 +103,8 @@ function love.load()
     -- initialize our player paddles; make them global so that they can be
     -- detected by other functions and modules
     numHumanPlayers = 2
-    player1 = Paddle(10, 30, PADDLE_WIDTH, PADDLE_HEIGHT, 1)
-    player2 = Paddle(VIRTUAL_WIDTH - 10, VIRTUAL_HEIGHT - 30, PADDLE_WIDTH, PADDLE_HEIGHT, 2)
+    player1 = Paddle(10, 30, PADDLE_WIDTH, PADDLE_HEIGHT)
+    player2 = Paddle(VIRTUAL_WIDTH - 10, VIRTUAL_HEIGHT - 30, PADDLE_WIDTH, PADDLE_HEIGHT)
 
     -- place a ball in the middle of the screen
     ball = Ball(VIRTUAL_WIDTH / 2 - BALL_WIDTH / 2, VIRTUAL_HEIGHT / 2 - BALL_HEIGHT / 2, BALL_WIDTH, BALL_HEIGHT)
@@ -178,7 +178,6 @@ function love.update(dt)
         if ball:collides(player1) then
             ball.dx = math.min(-ball.dx * BALL_ACCEL, BALL_MAX_SPEED)
             ball.x = player1.x + player1.width
-            player1.hitCount = player1.hitCount + 1
 
             -- keep velocity going in the same direction, but randomize it
             if ball.dy < 0 then
@@ -192,7 +191,6 @@ function love.update(dt)
         if ball:collides(player2) then
             ball.dx = math.max(-ball.dx * BALL_ACCEL, -BALL_MAX_SPEED)
             ball.x = player2.x - ball.width
-            player2.hitCount = player2.hitCount + 1
 
             -- keep velocity going in the same direction, but randomize it
             if ball.dy < 0 then
@@ -236,8 +234,8 @@ function love.update(dt)
                 gameState = 'serve'
                 -- places the ball in the middle of the screen, no velocity
                 ball:reset()
-                player1:reset(false)
-                player2:reset(false)
+                player1:reset()
+                player2:reset()
             end
         end
 
@@ -258,8 +256,8 @@ function love.update(dt)
                 gameState = 'serve'
                 -- places the ball in the middle of the screen, no velocity
                 ball:reset()
-                player1:reset(false)
-                player2:reset(false)
+                player1:reset()
+                player2:reset()
             end
         end
     end
