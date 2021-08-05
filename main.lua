@@ -51,6 +51,9 @@ VIRTUAL_HEIGHT = 243
 PADDLE_SPEED = 200
 PADDLE_WIDTH = 5
 PADDLE_HEIGHT = 20
+PADDLE_GUTTER = 10
+
+-- player settings
 MAX_SCORE = 10
 
 -- used to decide when computer player should serve
@@ -97,11 +100,11 @@ function love.load()
     -- initialize our player paddles; make them global so that they can be
     -- detected by other functions and modules
     numHumanPlayers = 2
-    paddle1 = Paddle(10, 30, PADDLE_WIDTH, PADDLE_HEIGHT)
-    paddle2 = Paddle(VIRTUAL_WIDTH - 10, VIRTUAL_HEIGHT - 30, PADDLE_WIDTH, PADDLE_HEIGHT)
+    paddle1 = Paddle(PADDLE_GUTTER, 30, PADDLE_WIDTH, PADDLE_HEIGHT)
+    paddle2 = Paddle(VIRTUAL_WIDTH - PADDLE_GUTTER, VIRTUAL_HEIGHT - 30, PADDLE_WIDTH, PADDLE_HEIGHT)
 
     -- create ball, the Ball class will place in the middle of the screen
-    ball = Ball(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, 10, VIRTUAL_WIDTH - 10)
+    ball = Ball(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, PADDLE_GUTTER, VIRTUAL_WIDTH - PADDLE_GUTTER)
 
     -- initialize score variables
     player1Score = 0
@@ -153,13 +156,7 @@ function love.update(dt)
             elseif nextServeTime > 0 and love.timer.getTime() >= nextServeTime then
                 -- before switching to play, initialize ball's velocity based
                 -- on player who last scored
-                -- TODO: This code is duplicated and should be refactored
-                ball.dy = math.random(-50, 50)
-                if servingPlayer == 1 then
-                    ball.dx = math.random(140, 200)
-                else
-                    ball.dx = -math.random(140, 200)
-                end
+                ball:serve(servingPlayer)
                 gameState = 'play'
                 nextServeTime = 0
             end
@@ -295,12 +292,7 @@ function love.keypressed(key)
         if gameState == 'serve' then
             -- before switching to play, initialize ball's velocity based
             -- on player who last scored
-            ball.dy = math.random(-50, 50)
-            if servingPlayer == 1 then
-                ball.dx = math.random(140, 200)
-            else
-                ball.dx = -math.random(140, 200)
-            end
+            ball:serve(servingPlayer)
             gameState = 'play'
         elseif gameState == 'done' then
             -- game is simply in a restart phase here, but will set the serving

@@ -48,7 +48,7 @@ function Ball:init(screen_width, screen_height, left_edge, right_edge)
 end
 
 --[[
-    Ball:reset: Places the ball in the middle of the screen, with no movement
+    Ball:reset - Places the ball in the middle of the screen, with no movement
 ]]
 function Ball:reset()
     self.x = self.start_x
@@ -59,7 +59,7 @@ end
 
 
 --[[
-    Ball:collides: Expects a paddle as an argument and returns true or false,
+    Ball:collides - Expects a paddle as an argument and returns true or false,
     depending on whether their rectangles overlap.
 ]]
 function Ball:collides(paddle)
@@ -80,7 +80,7 @@ function Ball:collides(paddle)
 end
 
 --[[
-    Ball:bounce: Reverses direction of a ball, called when it collides with a
+    Ball:bounce - Reverses direction of a ball, called when it collides with a
     paddle
 ]]
 function Ball:bounce(new_x)
@@ -96,7 +96,7 @@ function Ball:bounce(new_x)
 end
 
 --[[
-    Ball:deflect: Called when the ball has hit either the top or the bottom of
+    Ball:deflect - Called when the ball has hit either the top or the bottom of
     the screen, and it needs to deflect
 ]]
 function Ball:deflect(new_y)
@@ -105,7 +105,22 @@ function Ball:deflect(new_y)
 end
 
 --[[
-    Ball:update: Called each frame to update position of the ball
+    Ball:serve - Called when ball is being "served"
+
+    servingPlayer: Player who is serving (1 or 2)
+]]
+function Ball:serve(servingPlayer)
+    -- vertical direction randomised
+    ball.dy = math.random(-50, 50)
+    if servingPlayer == 1 then
+        ball.dx = math.random(140, 200)
+    else
+        ball.dx = -math.random(140, 200)
+    end
+end
+
+--[[
+    Ball:update - Called each frame to update position of the ball
 
     dt:     Delta time, in seconds, since last update
 ]]
@@ -127,6 +142,9 @@ function Ball:update(dt)
     end
 end
 
+--[[
+    Ball:render - Called each frame to draw ball
+]]
 function Ball:render()
     love.graphics.rectangle('fill', self.x, self.y, self.width, self.height)
 end
