@@ -57,7 +57,7 @@ PADDLE_HEIGHT = 20
 PADDLE_GUTTER = 10
 
 -- player settings
-MAX_SCORE = 10
+MAX_SCORE = 1000
 
 -- used to decide when computer player should serve
 nextServeTime = 0
@@ -176,11 +176,11 @@ function love.update(dt)
         -- slightly increasing it, then altering the dy based on the position
         -- at which it collided, then playing a sound effect
         if ball:collides(paddle1) then
-            ball:bounce(paddle1)
+            ball:bounce(paddle1.x + paddle1.width, paddle1)
             sounds['paddle_hit']:play()
         end
         if ball:collides(paddle2) then
-            ball:bounce(paddle2)
+            ball:bounce(paddle2.x - ball.width, paddle2)
             sounds['paddle_hit']:play()
         end
 
