@@ -31,6 +31,36 @@ push = require 'push'
 -- https://github.com/vrld/hump/blob/master/class.lua
 Class = require 'class'
 
+-- new Player class, which controls the logic for moving Paddles
+DefaultPlayer = require 'Player'
+
+-- Usere can pass 0-2 source files to use as alternative Player classes
+COMPETITORS = 'competitors/'
+if arg[3] then
+    Player1 = require(COMPETITORS .. arg[2])
+    Player2 = require(COMPETITORS .. arg[3])
+    print(string.format("Match: %s vs %s", arg[2], arg[3]))
+elseif arg[2] then
+    Player1 = DefaultPlayer
+    Player2 = require(COMPETITORS .. arg[2])
+    print(string.format("Match: %s vs DefaultPlayer", arg[2]))
+else
+    Player1 = DefaultPlayer
+    Player2 = DefaultPlayer
+    print("Match: DefaultPlayer vs DefaultPlayer")
+end
+
+-- Check if the Player1 and Player2 classes have humanmove methods - this will
+-- limit the number of humans that can play
+MAX_HUMAN_PLAYERS = 2
+if Player1.humanmove == nil then
+    MAX_HUMAN_PLAYERS = MAX_HUMAN_PLAYERS - 1
+end
+if Player2.humanmove == nil then
+    MAX_HUMAN_PLAYERS = MAX_HUMAN_PLAYERS - 1
+end
+print(string.format("Option: Max human players = %d", MAX_HUMAN_PLAYERS))
+
 -- our Paddle class, which stores position and dimensions for each Paddle
 -- and the logic for rendering them
 require 'Paddle'
@@ -48,16 +78,13 @@ VIRTUAL_WIDTH = 432
 VIRTUAL_HEIGHT = 243
 
 -- paddle movement speed
-PADDLE_SPEED = 200
+PADDLE_SPEED = VIRTUAL_WIDTH / 2
 PADDLE_WIDTH = 5
 PADDLE_HEIGHT = 20
-MAX_SCORE = 10
+PADDLE_GUTTER = 10
 
--- ball settings
-BALL_WIDTH = 4
-BALL_HEIGHT = 4
-BALL_ACCEL = 1.05 -- 1.03
-BALL_MAX_SPEED = VIRTUAL_WIDTH * 4
+-- player settings
+MAX_SCORE = 10
 
 -- used to decide when computer player should serve
 nextServeTime = 0
@@ -102,14 +129,20 @@ function love.load()
 
     -- initialize our player paddles; make them global so that they can be
     -- detected by other functions and modules
-    numHumanPlayers = 2
-    player1 = Paddle(10, 30, PADDLE_WIDTH, PADDLE_HEIGHT, 1)
-    player2 = Paddle(VIRTUAL_WIDTH - 10, VIRTUAL_HEIGHT - 30, PADDLE_WIDTH, PADDLE_HEIGHT, 2)
+    numHumanPlayers = MAX_HUMAN_PLAYERS
+    paddle1 = Paddle(PADDLE_GUTTER, 30, PADDLE_WIDTH, PADDLE_HEIGHT)
+    paddle2 = Paddle(VIRTUAL_WIDTH - PADDLE_GUTTER, VIRTUAL_HEIGHT - 30, PADDLE_WIDTH, PADDLE_HEIGHT)
 
-    -- place a ball in the middle of the screen
-    ball = Ball(VIRTUAL_WIDTH / 2 - BALL_WIDTH / 2, VIRTUAL_HEIGHT / 2 - BALL_HEIGHT / 2, BALL_WIDTH, BALL_HEIGHT)
+    -- create ball, the Ball class will place in the middle of the screen
+    ball = Ball(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, PADDLE_GUTTER, VIRTUAL_WIDTH - PADDLE_GUTTER)
 
-    -- initialize score variables
+    -- intialize players; a player needs to know about the paddle it controls,
+    -- and the size of the ball (which won't change)
+    player1 = Player1(1, paddle1, ball.height)
+    player2 = Player2(2, paddle2, ball.height)
+
+    -- initialize score variables; scores are kept separate because we can't
+    -- have players in direct control of their scores
     player1Score = 0
     player2Score = 0
 
@@ -148,24 +181,30 @@ end
     across system hardware.
 ]]
 function love.update(dt)
-    if gameState == 'serve' then
+    if gameState == 'start' then
+        -- if there is no possibility of a human playing, then don't wait for
+        -- a human to start
+        if MAX_HUMAN_PLAYERS == 0 then
+            numHumanPlayers = 0
+            gameState = 'serve'
+        end
+
+    elseif gameState == 'serve' then
         -- if the serving player is computer controlled, we should start
         -- the serve on our own
         if numHumanPlayers == 0 or (numHumanPlayers == 1 and servingPlayer == 2) then
             if nextServeTime == 0 then
-                -- start serve 3 seconds from now
-                nextServeTime = love.timer.getTime() + 3.0
+                -- start serve 3 seconds from now if human playing
+                if numHumanPlayers > 0 then
+                    nextServeTime = love.timer.getTime() + 3.0
+                else
+                    nextServeTime = love.timer.getTime() + 0.5
+                end
 
             elseif nextServeTime > 0 and love.timer.getTime() >= nextServeTime then
                 -- before switching to play, initialize ball's velocity based
                 -- on player who last scored
-                -- TODO: This code is duplicated and should be refactored
-                ball.dy = math.random(-50, 50)
-                if servingPlayer == 1 then
-                    ball.dx = math.random(140, 200)
-                else
-                    ball.dx = -math.random(140, 200)
-                end
+                ball:serve(servingPlayer)
                 gameState = 'play'
                 nextServeTime = 0
             end
@@ -175,47 +214,25 @@ function love.update(dt)
         -- detect ball collision with paddles, reversing dx if true and
         -- slightly increasing it, then altering the dy based on the position
         -- at which it collided, then playing a sound effect
-        if ball:collides(player1) then
-            ball.dx = math.min(-ball.dx * BALL_ACCEL, BALL_MAX_SPEED)
-            ball.x = player1.x + player1.width
-            player1.hitCount = player1.hitCount + 1
-
-            -- keep velocity going in the same direction, but randomize it
-            if ball.dy < 0 then
-                ball.dy = -math.random(10, 150)
-            else
-                ball.dy = math.random(10, 150)
-            end
-
+        if ball:collides(paddle1) then
+            ball:bounce(paddle1.x + paddle1.width, paddle1)
             sounds['paddle_hit']:play()
         end
-        if ball:collides(player2) then
-            ball.dx = math.max(-ball.dx * BALL_ACCEL, -BALL_MAX_SPEED)
-            ball.x = player2.x - ball.width
-            player2.hitCount = player2.hitCount + 1
-
-            -- keep velocity going in the same direction, but randomize it
-            if ball.dy < 0 then
-                ball.dy = -math.random(10, 150)
-            else
-                ball.dy = math.random(10, 150)
-            end
-
+        if ball:collides(paddle2) then
+            ball:bounce(paddle2.x - ball.width, paddle2)
             sounds['paddle_hit']:play()
         end
 
         -- detect upper and lower screen boundary collision, playing a sound
         -- effect and reversing dy if true
         if ball.y <= 0 then
-            ball.y = 0
-            ball.dy = -ball.dy
+            ball:deflect(0)
             sounds['wall_hit']:play()
         end
 
         -- -ball.height to account for the ball's size
         if ball.y >= VIRTUAL_HEIGHT - ball.height then
-            ball.y = VIRTUAL_HEIGHT - ball.height
-            ball.dy = -ball.dy
+            ball:deflect(VIRTUAL_HEIGHT - ball.height)
             sounds['wall_hit']:play()
         end
 
@@ -231,13 +248,17 @@ function love.update(dt)
             if player2Score == MAX_SCORE then
                 winningPlayer = 2
                 gameState = 'done'
-                numHumanPlayers = 2
+                if MAX_HUMAN_PLAYERS > 0 then
+                    numHumanPlayers = MAX_HUMAN_PLAYERS
+                else
+                    love.event.quit()
+                end
             else
                 gameState = 'serve'
                 -- places the ball in the middle of the screen, no velocity
                 ball:reset()
-                player1:reset(false)
-                player2:reset(false)
+                paddle1:reset()
+                paddle2:reset()
             end
         end
 
@@ -253,13 +274,17 @@ function love.update(dt)
             if player1Score == MAX_SCORE then
                 winningPlayer = 1
                 gameState = 'done'
-                numHumanPlayers = 2
+                if MAX_HUMAN_PLAYERS > 0 then
+                    numHumanPlayers = MAX_HUMAN_PLAYERS
+                else
+                    love.event.quit()
+                end
             else
                 gameState = 'serve'
                 -- places the ball in the middle of the screen, no velocity
                 ball:reset()
-                player1:reset(false)
-                player2:reset(false)
+                paddle1:reset()
+                paddle2:reset()
             end
         end
     end
@@ -268,19 +293,18 @@ function love.update(dt)
     -- paddles can move no matter what state we're in, but only if the
     -- humans are in charge!
     --
-
     if numHumanPlayers == 1 then
         -- player 1 human; player 2 is computer
-        player1:humanmove('w', 's', PADDLE_SPEED)
-        player2:automove(PADDLE_SPEED, ball, dt)
+        paddle1.dy = player1:humanmove(PADDLE_SPEED, 'w', 's')
+        paddle2.dy = player2:automove(PADDLE_SPEED, ball.x, ball.y)
     elseif numHumanPlayers == 2 then
         -- player 1 and 2 are human
-        player1:humanmove('w', 's', PADDLE_SPEED)
-        player2:humanmove('up', 'down', PADDLE_SPEED)
+        paddle1.dy = player1:humanmove(PADDLE_SPEED, 'w', 's')
+        paddle2.dy = player2:humanmove(PADDLE_SPEED, 'up', 'down')
     else
         -- player 1 and 2 are computer
-        player1:automove(PADDLE_SPEED, ball, dt)
-        player2:automove(PADDLE_SPEED, ball, dt)
+        paddle1.dy = player1:automove(PADDLE_SPEED, ball.x, ball.y)
+        paddle2.dy = player2:automove(PADDLE_SPEED, ball.x, ball.y)
     end
 
     -- update our ball based on its DX and DY only if we're in play state;
@@ -289,8 +313,8 @@ function love.update(dt)
         ball:update(dt)
     end
 
-    player1:update(dt)
-    player2:update(dt)
+    paddle1:update(dt)
+    paddle2:update(dt)
 end
 
 --[[
@@ -315,6 +339,9 @@ function love.keypressed(key)
         if gameState == 'start' then
             gameState = 'serve'
             numHumanPlayers = tonumber(key)
+            if numHumanPlayers > MAX_HUMAN_PLAYERS then
+                numHumanPlayers = MAX_HUMAN_PLAYERS
+            end
         end
 
     elseif key == 'enter' or key == 'return' or key == 'space' then
@@ -323,12 +350,7 @@ function love.keypressed(key)
         if gameState == 'serve' then
             -- before switching to play, initialize ball's velocity based
             -- on player who last scored
-            ball.dy = math.random(-50, 50)
-            if servingPlayer == 1 then
-                ball.dx = math.random(140, 200)
-            else
-                ball.dx = -math.random(140, 200)
-            end
+            ball:serve(servingPlayer)
             gameState = 'play'
         elseif gameState == 'done' then
             -- game is simply in a restart phase here, but will set the serving
@@ -336,8 +358,8 @@ function love.keypressed(key)
             gameState = 'start'
 
             ball:reset()
-            player1:reset()
-            player2:reset()
+            paddle1:reset()
+            paddle2:reset()
 
             -- reset scores to 0
             player1Score = 0
@@ -362,6 +384,9 @@ function love.draw()
     push:apply('start')
 
     love.graphics.clear(40/255, 45/255, 52/255, 255/255)
+    love.graphics.setColor(0.5, 0.5, 0.5, 1.0)
+    love.graphics.line(VIRTUAL_WIDTH / 2, 0, VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT)
+    love.graphics.setColor(1.0, 1.0, 1.0, 1.0)
     
     -- render different things depending on which part of the game we're in
     if gameState == 'start' then
@@ -394,8 +419,8 @@ function love.draw()
     -- show the score before ball is rendered so it can move over the text
     displayScore()
     
-    player1:render()
-    player2:render()
+    paddle1:render()
+    paddle2:render()
     ball:render()
 
     -- display FPS for debugging; simply comment out to remove
@@ -425,4 +450,16 @@ function displayFPS()
     love.graphics.setFont(smallFont)
     love.graphics.setColor(0, 1, 0, 1)
     love.graphics.print('FPS: ' .. tostring(love.timer.getFPS()), 10, 10)
+end
+
+--[[
+    love.quit: Callback when game ends. Prints final result.
+]]
+function love.quit()
+    if winningPlayer > 0 then
+        print(string.format("Result: Player %d won (%d-%d)", winningPlayer, player1Score, player2Score))
+    else
+        print(string.format("Result: DNF (%d-%d)", player1Score, player2Score))
+    end
+    return false
 end
