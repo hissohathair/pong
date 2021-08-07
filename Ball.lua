@@ -17,7 +17,7 @@ Ball = Class{}
 -- ball settings
 BALL_WIDTH = 4
 BALL_HEIGHT = 4
-BALL_ACCEL = 1.03 -- 1.03
+BALL_ACCEL = 1.07 -- 1.03
 
 -- max speed of a ball, in pixels per second, will be the screen's width
 -- multiplied by this factor. Therefore the default value of 4 should mean
@@ -27,7 +27,7 @@ BALL_MAX_FACTOR = 4
 -- There are 8 preset dy values based on what part of the paddle the
 -- ball hits. Values are what multiple of dx should be applied to calculate dy.
 -- Note that Lua customarily starts arrays at index "1"
-BOUNCE_ANGLES = {1.0, 0.40, 0.15, 0.01, -0.01, -0.15, -0.40, -1.0}
+BOUNCE_ANGLES = {1.0, 0.40, 0.15, 0.03, -0.03, -0.15, -0.40, -1.0}
 
 --[[
     Ball:init
