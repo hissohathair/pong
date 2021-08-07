@@ -48,9 +48,9 @@ function Player:automove(paddle_speed, ball_x, ball_y)
     -- simple method: track the ball when it's coming towards us, centre the
     -- paddle when it's moving away
     if movingTowards then
-	    if ball_y < self.paddle.y then
+	    if ball_y < self.paddle.y + self.ball_size / 2 then
 	        return -paddle_speed
-	    elseif ball.y > self.paddle.y + self.paddle.height then
+	    elseif ball.y > self.paddle.y + self.paddle.height - self.ball_size / 2 then
 	        return paddle_speed
 	    end
 	else
