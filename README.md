@@ -1,4 +1,6 @@
-# pong
+# Pong Clone
+
+Good [ol' Pong](https://en.wikipedia.org/wiki/Pong). Thanks Atari!
  
 The original code in this project is from [Project 0](https://cs50.harvard.edu/games/2018/projects/0/) from HarvardX's [CS50 Introduction to Game Development](https://learning.edx.org/course/course-v1:HarvardX+CS50G+Games/home). The course includes an assignment to implement an "AI player". The code uses the [LÖVE](http://love2d.org/) framework.
 
@@ -59,3 +61,9 @@ TODO:
 * The original also had a limitation that made the very top and very bottom of the screen inaccessible to paddles. This could be exploited by skilled players to score points - otherwise the game could go on too long
 * Hitting the ball with a paddle that is moving could impart some momentum to the ball, consistent with the direction the paddle was moving at time of collision
 * Hitting the ball with a paddle that is still could slightly decrease the velocity of the ball
+
+# Sources and Credits
+
+* [Game Mechanics: Pong](https://gamemechanics.fandom.com/wiki/Pong)
+* [Wikipedia: Pong](https://en.wikipedia.org/wiki/Pong)
+* [Inevitable StackOverflow Question](https://gamedev.stackexchange.com/questions/4253/in-pong-how-do-you-calculate-the-balls-direction-when-it-bounces-off-the-paddl)
