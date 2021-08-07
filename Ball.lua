@@ -25,7 +25,8 @@ BALL_ACCEL = 1.03 -- 1.03
 BALL_MAX_FACTOR = 4
 
 -- There are 8 preset dy values based on what part of the paddle the
--- ball hits. Values are what multiple of dx should be applied to calculate dy
+-- ball hits. Values are what multiple of dx should be applied to calculate dy.
+-- Note that Lua customarily starts arrays at index "1"
 BOUNCE_ANGLES = {1.0, 0.40, 0.15, 0.01, -0.01, -0.15, -0.40, -1.0}
 
 --[[
@@ -102,9 +103,10 @@ function Ball:bounce(new_x, paddle)
     self.dx = math.min(-self.dx * BALL_ACCEL, self.max_speed)
 
     -- the y direction is a function of where the ball hit the paddle. We're
-    -- going to use the same "8 segments" approach as the original
+    -- going to use the same "8 segments" approach as the original. There's a
+    -- flaw in my math that means we occassionally get segment "9" which is
+    -- out of bounds so as a quick fix we lock in a max value of 8
     segment = math.min(math.floor((paddle.y + paddle.height - ball.y) / paddle.height * 7 + 1.5), 8)
-    print(string.format("segment=%d p.y=%d + %d b.y=%d", segment, paddle.y, paddle.height, ball.y))
     self.dy = BOUNCE_ANGLES[segment] * math.abs(self.dx)
 end
 
