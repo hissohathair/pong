@@ -21,6 +21,7 @@ function Player:init(playerNumber, paddle, ball_size)
 	self.ball_size = ball_size
 	self.last_ball_x = 0
 	self.last_ball_y = 0
+	self.last_target_y = 0
 end
 
 --[[
@@ -57,15 +58,33 @@ function Player:automove(paddle_speed, ball_x, ball_y)
     -- method: anticipate where the ball is heading and try and get there
     -- first. If the ball is moving away, head back to the centre(ish)
     if movingTowards then
-	    -- y = m * x + b    b = y - mx
+	    -- y = m * x + b    b = y - mx    x = (y - b) / m
 	    m = dy / dx
 	    b = ball_y - m * ball_x
 	    y = m * self.paddle.x + b
 
+	    -- if y is < 0 or > VIRTUAL_HEIGHT then it's going to hit an edge and
+	    -- bounce first...
+	    if y < 0 then
+	    	-- ball will hit the top, but where?
+	    	x = (0 - b) / m
+	    	m = -dy / dx
+	    	b = 0 - m * x 
+	    	y = m * self.paddle.x + b
+	    elseif y > VIRTUAL_HEIGHT then
+	    	-- ball will hit the bottom, but where?
+	    	x = (VIRTUAL_HEIGHT - b) / m
+	    	m = -dy / dx
+	    	b = VIRTUAL_HEIGHT - m * x
+	    	y = m * self.paddle.x + b 
+	    end
+
+    	self.last_target_y = y
+
 	    -- ball will pass at y -- get the paddle there
-	    if y < self.paddle.y then
+	    if y < self.paddle.y + self.ball_size then
 	    	return -paddle_speed
-	    elseif y > self.paddle.y + self.paddle.height then
+	    elseif y > self.paddle.y + self.paddle.height - self.ball_size then
 	    	return paddle_speed
 	    else
 	    	return 0
@@ -78,6 +97,11 @@ function Player:automove(paddle_speed, ball_x, ball_y)
 		end
 	end
     return 0
+end
+
+function Player:notify_result(result, ball_x, ball_y, paddle) 
+    print(string.format("DEBUG: Player%d %s (ball=%d,%d) (paddle.y=%d-%d, my target=%d)", 
+    	self.playerNumber, result, ball_x, ball_y, paddle.y, paddle.y + paddle.height, self.last_target_y))
 end
 
 return Player

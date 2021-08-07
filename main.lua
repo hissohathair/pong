@@ -78,7 +78,7 @@ VIRTUAL_WIDTH = 432
 VIRTUAL_HEIGHT = 243
 
 -- paddle movement speed
-PADDLE_SPEED = VIRTUAL_WIDTH / 2
+PADDLE_SPEED = VIRTUAL_WIDTH / 1.5
 PADDLE_WIDTH = 5
 PADDLE_HEIGHT = 20
 PADDLE_GUTTER = 10
@@ -242,6 +242,12 @@ function love.update(dt)
             servingPlayer = 1
             player2Score = player2Score + 1
             sounds['score']:play()
+            if player1.notify_result then
+                player1:notify_result('lost', ball.x, ball.y, paddle1)
+            end
+            if player2.notify_result then
+                player2:notify_result('won', ball.x, ball.y, paddle2)
+            end
 
             -- if we've reached a score of 10, the game is over; set the
             -- state to done so we can show the victory message
@@ -268,6 +274,12 @@ function love.update(dt)
             servingPlayer = 2
             player1Score = player1Score + 1
             sounds['score']:play()
+            if player1.notify_result then
+                player1:notify_result('won', ball.x, ball.y, paddle1)
+            end
+            if player2.notify_result then
+                player2:notify_result('lost', ball.x, ball.y, paddle2)
+            end
 
             -- if we've reached a score of 10, the game is over; set the
             -- state to done so we can show the victory message
@@ -326,7 +338,7 @@ end
 function love.keypressed(key)
     -- `key` will be whatever key this callback detected as pressed
     if key == 'escape' then
-        if gameState == 'play' then
+        if gameState == 'play' and numHumanPlayers > 0 then
             gameState = 'start'
         else
             -- the function LÖVE2D uses to quit the application
