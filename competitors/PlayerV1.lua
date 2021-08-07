@@ -4,8 +4,8 @@
 
     -- Player Class --
 
-    Represents a player that can control a Paddle. This implementation has
-    methods for both a human and a computer controlled Player.
+    Represents a player that can control a Paddle. This implementation is
+    computer only, with the same method as the "default" Player class.
 ]]
 
 local Player = Class{}
@@ -22,23 +22,6 @@ function Player:init(playerNumber, paddle, ball_size)
 	self.ball_size = ball_size
 end
 
-
---[[
-	Player:humanmove - Called to allow the human player to move the paddle. 
-	Pass in the key for `up` and `down` paddle based on which player (1 or 2)
-	is moving
-
-	paddle_speed: Max speed paddle can move (pixels/s)
-	upkey, downkey: Keyboard key to check for up/down
-]]
-function Player:humanmove(paddle_speed, upkey, downkey)
-    if love.keyboard.isDown(upkey) then
-        return -paddle_speed
-    elseif love.keyboard.isDown(downkey) then
-        return paddle_speed
-    end
-    return 0
-end
 
 --[[
 	Player:automove - Called when the computer is controlling the paddle

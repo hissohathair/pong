@@ -32,7 +32,34 @@ push = require 'push'
 Class = require 'class'
 
 -- new Player class, which controls the logic for moving Paddles
-require 'Player'
+DefaultPlayer = require 'Player'
+
+-- Usere can pass 0-2 source files to use as alternative Player classes
+COMPETITORS = 'competitors/'
+if arg[3] then
+    Player1 = require(COMPETITORS .. arg[2])
+    Player2 = require(COMPETITORS .. arg[3])
+    print(string.format("Match: %s vs %s", arg[2], arg[3]))
+elseif arg[2] then
+    Player1 = DefaultPlayer
+    Player2 = require(COMPETITORS .. arg[2])
+    print(string.format("Match: %s vs DefaultPlayer", arg[2]))
+else
+    Player1 = DefaultPlayer
+    Player2 = DefaultPlayer
+    print("Match: DefaultPlayer vs DefaultPlayer")
+end
+
+-- Check if the Player1 and Player2 classes have humanmove methods - this will
+-- limit the number of humans that can play
+MAX_HUMAN_PLAYERS = 2
+if Player1.humanmove == nil then
+    MAX_HUMAN_PLAYERS = MAX_HUMAN_PLAYERS - 1
+end
+if Player2.humanmove == nil then
+    MAX_HUMAN_PLAYERS = MAX_HUMAN_PLAYERS - 1
+end
+print(string.format("Option: Max human players = %d", MAX_HUMAN_PLAYERS))
 
 -- our Paddle class, which stores position and dimensions for each Paddle
 -- and the logic for rendering them
@@ -51,13 +78,13 @@ VIRTUAL_WIDTH = 432
 VIRTUAL_HEIGHT = 243
 
 -- paddle movement speed
-PADDLE_SPEED = 200
+PADDLE_SPEED = VIRTUAL_WIDTH / 2
 PADDLE_WIDTH = 5
 PADDLE_HEIGHT = 20
 PADDLE_GUTTER = 10
 
 -- player settings
-MAX_SCORE = 1000
+MAX_SCORE = 10
 
 -- used to decide when computer player should serve
 nextServeTime = 0
@@ -102,7 +129,7 @@ function love.load()
 
     -- initialize our player paddles; make them global so that they can be
     -- detected by other functions and modules
-    numHumanPlayers = 2
+    numHumanPlayers = MAX_HUMAN_PLAYERS
     paddle1 = Paddle(PADDLE_GUTTER, 30, PADDLE_WIDTH, PADDLE_HEIGHT)
     paddle2 = Paddle(VIRTUAL_WIDTH - PADDLE_GUTTER, VIRTUAL_HEIGHT - 30, PADDLE_WIDTH, PADDLE_HEIGHT)
 
@@ -111,8 +138,8 @@ function love.load()
 
     -- intialize players; a player needs to know about the paddle it controls,
     -- and the size of the ball (which won't change)
-    player1 = Player(1, paddle1, ball.height)
-    player2 = Player(2, paddle2, ball.height)
+    player1 = Player1(1, paddle1, ball.height)
+    player2 = Player2(2, paddle2, ball.height)
 
     -- initialize score variables; scores are kept separate because we can't
     -- have players in direct control of their scores
@@ -154,13 +181,25 @@ end
     across system hardware.
 ]]
 function love.update(dt)
-    if gameState == 'serve' then
+    if gameState == 'start' then
+        -- if there is no possibility of a human playing, then don't wait for
+        -- a human to start
+        if MAX_HUMAN_PLAYERS == 0 then
+            numHumanPlayers = 0
+            gameState = 'serve'
+        end
+
+    elseif gameState == 'serve' then
         -- if the serving player is computer controlled, we should start
         -- the serve on our own
         if numHumanPlayers == 0 or (numHumanPlayers == 1 and servingPlayer == 2) then
             if nextServeTime == 0 then
-                -- start serve 3 seconds from now
-                nextServeTime = love.timer.getTime() + 3.0
+                -- start serve 3 seconds from now if human playing
+                if numHumanPlayers > 0 then
+                    nextServeTime = love.timer.getTime() + 3.0
+                else
+                    nextServeTime = love.timer.getTime() + 0.5
+                end
 
             elseif nextServeTime > 0 and love.timer.getTime() >= nextServeTime then
                 -- before switching to play, initialize ball's velocity based
@@ -209,7 +248,11 @@ function love.update(dt)
             if player2Score == MAX_SCORE then
                 winningPlayer = 2
                 gameState = 'done'
-                numHumanPlayers = 2
+                if MAX_HUMAN_PLAYERS > 0 then
+                    numHumanPlayers = MAX_HUMAN_PLAYERS
+                else
+                    love.event.quit()
+                end
             else
                 gameState = 'serve'
                 -- places the ball in the middle of the screen, no velocity
@@ -231,7 +274,11 @@ function love.update(dt)
             if player1Score == MAX_SCORE then
                 winningPlayer = 1
                 gameState = 'done'
-                numHumanPlayers = 2
+                if MAX_HUMAN_PLAYERS > 0 then
+                    numHumanPlayers = MAX_HUMAN_PLAYERS
+                else
+                    love.event.quit()
+                end
             else
                 gameState = 'serve'
                 -- places the ball in the middle of the screen, no velocity
@@ -246,7 +293,6 @@ function love.update(dt)
     -- paddles can move no matter what state we're in, but only if the
     -- humans are in charge!
     --
-
     if numHumanPlayers == 1 then
         -- player 1 human; player 2 is computer
         paddle1.dy = player1:humanmove(PADDLE_SPEED, 'w', 's')
@@ -293,6 +339,9 @@ function love.keypressed(key)
         if gameState == 'start' then
             gameState = 'serve'
             numHumanPlayers = tonumber(key)
+            if numHumanPlayers > MAX_HUMAN_PLAYERS then
+                numHumanPlayers = MAX_HUMAN_PLAYERS
+            end
         end
 
     elseif key == 'enter' or key == 'return' or key == 'space' then
@@ -335,6 +384,9 @@ function love.draw()
     push:apply('start')
 
     love.graphics.clear(40/255, 45/255, 52/255, 255/255)
+    love.graphics.setColor(0.5, 0.5, 0.5, 1.0)
+    love.graphics.line(VIRTUAL_WIDTH / 2, 0, VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT)
+    love.graphics.setColor(1.0, 1.0, 1.0, 1.0)
     
     -- render different things depending on which part of the game we're in
     if gameState == 'start' then
@@ -398,4 +450,16 @@ function displayFPS()
     love.graphics.setFont(smallFont)
     love.graphics.setColor(0, 1, 0, 1)
     love.graphics.print('FPS: ' .. tostring(love.timer.getFPS()), 10, 10)
+end
+
+--[[
+    love.quit: Callback when game ends. Prints final result.
+]]
+function love.quit()
+    if winningPlayer > 0 then
+        print(string.format("Result: Player %d won (%d-%d)", winningPlayer, player1Score, player2Score))
+    else
+        print(string.format("Result: DNF (%d-%d)", player1Score, player2Score))
+    end
+    return false
 end

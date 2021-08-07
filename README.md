@@ -2,11 +2,26 @@
 
 Good [ol' Pong](https://en.wikipedia.org/wiki/Pong). Thanks Atari!
  
-The original code in this project is from [Project 0](https://cs50.harvard.edu/games/2018/projects/0/) from HarvardX's [CS50 Introduction to Game Development](https://learning.edx.org/course/course-v1:HarvardX+CS50G+Games/home). The course includes an assignment to implement an "AI player".
+The original code in this project is from [Project 0](https://cs50.harvard.edu/games/2018/projects/0/) from HarvardX's [CS50 Introduction to Game Development](https://learning.edx.org/course/course-v1:HarvardX+CS50G+Games/home). The course includes an assignment to implement an "AI player". The code uses the [LÖVE](http://love2d.org/) framework.
 
 # Goal
 
-Writing a version where different computer players (I think calling them "AI" is setting the AI bar way too low) can play against each other. This time we want to make it difficult for a computer player to cheat.
+Writing a version where different computer players (I think calling them "AI" is setting the AI bar way too low) can play against each other.
+
+# Usage
+
+* Download and install [LÖVE](http://love2d.org/) (Windows, Mac, or Linux)
+* From the source directory, run `love .`
+* To compare computer player classes, the `Player` implementation must be in the `competitors/` sub-directory. Then pass the name of the `.lua` source file(s)
+
+Examples:
+
+```sh
+love . 						# Play with default Player
+love . PlayerV2 			# Play default against "v2" implementation
+love . PlayerV1 PlayerV2 	# Play "v1" vs "v2" (no humans)
+
+```
 
 # Changes to CS50
 
@@ -16,7 +31,7 @@ As a consequence stalemates occured when my computer player played itself. Very 
 
 The problem was that the ball's velocity was dominated by the dx movement. The horizontal movement was increased 3% after each hit, however the vertical movement was a random value between -50 and 50. As the ball accelerated at each "hit" of the paddle it eventually moved very fast back and forth with relatively little vertical movement. In the end the paddles hardly needed to move at all. 
 
-Prior to my changes the collision detector there would be no stalemate because one side would "win" simply because the ball was moving too fast for *any* player to intercept. This seemed a bit unfair and random so I wanted to end stalemates in a way that players felt they could control (either manually or by coding a better computer player).
+Prior to my changes to the collision detector there would be no stalemate because one side would "win" simply because the ball was moving too fast for *any* player to intercept. This seemed a bit unfair and random so I wanted to end stalemates in a way that players felt they could control (either manually or by coding a better computer player).
 
 The original game of Pong allowed the player some control over the angle of deflection when the ball bounced off the paddle. If the ball hit the paddle's edge, it would bounce off at an acute angle. If it hit the middle of the paddle, it bounced off at a right angle. This behaviour could be useful.
 
@@ -24,11 +39,11 @@ The original game of Pong allowed the player some control over the angle of defl
 
 * Fixed the `Ball` class so that vertical movement is retained, even at high speeds
 * Ball deflection angle is no longer random, but is determined by where it hits the paddle. More acute angles are achieved by hitting the ball towards an edge of the paddle
+* You can pass different `Player` class implementations to the game from the command line. The game will print the winner on stdout when done
 
 Next:
 
-* Pass different `Player` classes to the game and have it print out the winner
-* Check this Pong implementation against the [original Pong mechanics](https://gamemechanics.fandom.com/wiki/Pong)
+* Can we implement a "cheating" `Player` class?
 
 Later:
 
