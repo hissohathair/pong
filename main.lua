@@ -39,16 +39,20 @@ COMPETITORS = 'competitors/'
 if arg[3] then
     Player1 = require(COMPETITORS .. arg[2])
     Player2 = require(COMPETITORS .. arg[3])
-    print(string.format("Match: %s vs %s", arg[2], arg[3]))
+    player1Name = arg[2]
+    player2Name = arg[3]
 elseif arg[2] then
     Player1 = DefaultPlayer
     Player2 = require(COMPETITORS .. arg[2])
-    print(string.format("Match: %s vs DefaultPlayer", arg[2]))
+    player1Name = 'Default'
+    player2Name = arg[2]
 else
     Player1 = DefaultPlayer
     Player2 = DefaultPlayer
-    print("Match: DefaultPlayer vs DefaultPlayer")
+    player1Name = 'Default'
+    player2Name = 'Default'
 end
+print(string.format("Match: %s vs %s", player1Name, player2Name))
 
 -- Check if the Player1 and Player2 classes have humanmove methods - this will
 -- limit the number of humans that can play
@@ -59,7 +63,6 @@ end
 if Player2.humanmove == nil then
     MAX_HUMAN_PLAYERS = MAX_HUMAN_PLAYERS - 1
 end
-print(string.format("Option: Max human players = %d", MAX_HUMAN_PLAYERS))
 
 -- our Paddle class, which stores position and dimensions for each Paddle
 -- and the logic for rendering them
@@ -84,7 +87,7 @@ PADDLE_HEIGHT = 20
 PADDLE_GUTTER = 10
 
 -- player settings
-MAX_SCORE = 10
+MAX_SCORE = 1000
 
 -- used to decide when computer player should serve
 nextServeTime = 0
@@ -103,7 +106,9 @@ function love.load()
     love.window.setTitle('Pong')
 
     -- seed the RNG so that calls to random are always random
-    math.randomseed(os.time())
+    seed = os.time()
+    math.randomseed(seed)
+    print(string.format("DEBUG: seed=%d", seed))
 
     -- initialize our nice-looking retro text fonts
     smallFont = love.graphics.newFont('font.ttf', 8)
@@ -134,7 +139,7 @@ function love.load()
     paddle2 = Paddle(VIRTUAL_WIDTH - PADDLE_GUTTER, VIRTUAL_HEIGHT - 30, PADDLE_WIDTH, PADDLE_HEIGHT)
 
     -- create ball, the Ball class will place in the middle of the screen
-    ball = Ball(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, PADDLE_GUTTER, VIRTUAL_WIDTH - PADDLE_GUTTER)
+    ball = Ball(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, PADDLE_WIDTH, PADDLE_GUTTER, VIRTUAL_WIDTH - PADDLE_GUTTER)
 
     -- intialize players; a player needs to know about the paddle it controls,
     -- and the size of the ball (which won't change)
@@ -242,11 +247,13 @@ function love.update(dt)
             servingPlayer = 1
             player2Score = player2Score + 1
             sounds['score']:play()
+
+            print(string.format('LOG: {"event": "point", "p": 2, "name": "%s", "against": "%s"}', player2Name, player1Name))
             if player1.notify_result then
-                player1:notify_result('lost', ball.x, ball.y, paddle1)
+                player1:notify_result('missed', ball, paddle1)
             end
             if player2.notify_result then
-                player2:notify_result('won', ball.x, ball.y, paddle2)
+                player2:notify_result('won', ball, paddle1)
             end
 
             -- if we've reached a score of 10, the game is over; set the
@@ -274,11 +281,13 @@ function love.update(dt)
             servingPlayer = 2
             player1Score = player1Score + 1
             sounds['score']:play()
+
+            print(string.format('LOG: {"event": "point", "p": 1, "name": "%s", "against": "%s"}', player1Name, player2Name))
             if player1.notify_result then
-                player1:notify_result('won', ball.x, ball.y, paddle1)
+                player1:notify_result('won', ball, paddle2)
             end
             if player2.notify_result then
-                player2:notify_result('lost', ball.x, ball.y, paddle2)
+                player2:notify_result('missed', ball, paddle2)
             end
 
             -- if we've reached a score of 10, the game is over; set the
@@ -469,9 +478,11 @@ end
 ]]
 function love.quit()
     if winningPlayer > 0 then
-        print(string.format("Result: Player %d won (%d-%d)", winningPlayer, player1Score, player2Score))
+        print(string.format('LOG: {"event": "result", "p": %d, "score": "%d:%d", "p1": "%s", "p2:", "%s"}', 
+            winningPlayer, player1Score, player2Score,
+            player1Name, player2Name))
     else
-        print(string.format("Result: DNF (%d-%d)", player1Score, player2Score))
+        print(string.format('No Result: Interim score %d:%d', player1Score, player2Score))
     end
     return false
 end

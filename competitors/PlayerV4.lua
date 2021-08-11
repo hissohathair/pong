@@ -1,5 +1,5 @@
 --[[
-    Player V3 Class
+    Player V4 Class
 
     Represents a player that can control a Paddle. Computer control only.
 
@@ -51,9 +51,12 @@ function Player:automove(paddle_speed, ball_x, ball_y)
 		movingTowards = true
 	end
 
-	-- update where the ball was for later comparison
-	self.last_ball_x = ball_x
-	self.last_ball_y = ball_y
+	-- enough of a delta for accurate prediction?
+	if math.abs(dx) > self.ball_size * 2 or math.abs(dy) > self.ball_size * 2 then
+		-- update where the ball was for later comparison
+		self.last_ball_x = ball_x
+		self.last_ball_y = ball_y
+	end
 
     -- method: anticipate where the ball is heading and try and get there
     -- first. If the ball is moving away, head back to the centre(ish)
@@ -90,15 +93,33 @@ function Player:automove(paddle_speed, ball_x, ball_y)
 	    	return 0
 	    end
 	else
-		if self.paddle.y < VIRTUAL_HEIGHT / 3 then
+		if self.paddle.y < VIRTUAL_HEIGHT / 4 then
 			return paddle_speed
-		elseif self.paddle.y + self.paddle.height > VIRTUAL_HEIGHT * 0.66 then
+		elseif self.paddle.y + self.paddle.height > VIRTUAL_HEIGHT * 0.75 then
 			return -paddle_speed
 		end
 	end
     return 0
 end
 
+--[[
+	Player.notify_result: Called by mail.lua to tell the `Player` instance the
+	result of a round.
 
+	result: 'won' or 'missed' for this player
+	ball_x, ball_y: Position of the ball at the time of result
+	paddle: Instance of the *losing* paddle at time of result - this is always
+		the paddle that "missed", not necessarily the paddle this instance
+		controls
+]]
+function Player:notify_result(result, ball, paddle)
+	msg = string.format('LOG: {"event": "%s", "name": "PlayerV4", "p": %d, ', result, self.playerNumber)
+	msg = msg .. string.format('"ball": {"pos": [%d, %d], "mov": [%d, %d], "m": %.2f}, ', ball.x, ball.y, ball.dx, ball.dy, ball.dy / ball.dx)
+	msg = msg .. string.format('"ytarget": %d, ', self.last_target_y)
+	msg = msg .. string.format('"paddle": {"pos": [%d, %d], "dy": %d}}', paddle.y, paddle.y + paddle.height, paddle.dy)
+	if result == 'missed' then
+	    print(msg)
+	end
+end
 
 return Player

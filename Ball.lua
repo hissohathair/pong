@@ -22,7 +22,7 @@ BALL_ACCEL = 1.07 -- 1.03
 -- max speed of a ball, in pixels per second, will be the screen's width
 -- multiplied by this factor. Therefore the default value of 4 should mean
 -- a ball can traverse the horizontal in 1/4 of a second
-BALL_MAX_FACTOR = 4
+BALL_MAX_FACTOR = 3
 
 -- There are 8 preset dy values based on what part of the paddle the
 -- ball hits. Values are what multiple of dx should be applied to calculate dy.
@@ -35,12 +35,13 @@ BOUNCE_ANGLES = {1.0, 0.40, 0.15, 0.03, -0.03, -0.15, -0.40, -1.0}
     screen_width, screen_height: Size of screen in pixels
     left_edge, right_edge: Where the paddles are, in pixels
 ]]
-function Ball:init(screen_width, screen_height, left_edge, right_edge)
+function Ball:init(screen_width, screen_height, paddle_width, left_edge, right_edge)
     -- ball starts in center of screen
     self.start_x = screen_width / 2 - BALL_WIDTH / 2
     self.start_y = screen_height / 2 - BALL_HEIGHT / 2
 
     -- remember these - needed below
+    self.paddle_width = paddle_width
     self.left_edge = left_edge
     self.right_edge = right_edge
     self.screen_width = screen_width
@@ -141,20 +142,38 @@ end
 ]]
 function Ball:update(dt)
     last_x = self.x 
-    last_y = self.y 
-    self.x = self.x + self.dx * dt
-    self.y = self.y + self.dy * dt
-
-    -- TODO: Bug here -- self.y could be off screen
+    last_y = self.y
+    dx = self.dx * dt
+    dy = self.dy * dt
 
     -- when the ball is moving really fast, check to see if it passes a paddle
     -- boundary and "clip" it if it does
-    -- TODO: these hard coded values need to go
-    if last_x > self.left_edge and self.x < self.left_edge then
-        self.x = self.left_edge
-    elseif last_x < self.right_edge and self.x > self.right_edge then
-        self.x = self.right_edge
+    --
+    if dx < 0 and last_x > self.left_edge + self.paddle_width and self.x + dx + self.width < self.left_edge then
+        -- ball moving left (dx<0), and went from out in front of paddle to behind 
+        -- in one step. Shrink that back to be on the paddle
+        new_dx = self.left_edge - self.x
+        dy = dy * (new_dx / dx)
+        dx = new_dx
+        --[[print(string.format("DEBUG: Left snapping ball(%d, %d) to (%d, %d) delta=(%f, %f) @ %f", 
+            last_x, last_y, self.x + dx, self.y + dy, dx, dy, dt))
+        ]]
+
+    elseif dx > 0 and last_x + self.width < self.right_edge and self.x + dx > self.right_edge + self.paddle_width then
+        -- ball moving right (dx>0), and moved from in front of paddle to
+        -- behind in one step
+        new_dx = self.right_edge - self.x
+        dy = dy * (new_dx / dx)
+        dx = new_dx
+        --[[print(string.format("DEBUG: Right snapping ball(%d, %d) to (%d, %d) delta=(%f, %f) @ %f", 
+            last_x, last_y, self.x + dx, self.y + dy, dx, dy, dt)) 
+        ]]
     end
+
+
+    self.x = self.x + dx
+    self.y = self.y + dy
+
 end
 
 --[[
