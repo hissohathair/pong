@@ -11,6 +11,7 @@
 ]]
 
 local Player = Class{}
+local MY_NAME = 'PlayerV2'
 
 --[[
 	Player:init
@@ -61,6 +62,26 @@ function Player:automove(paddle_speed, ball_x, ball_y)
 		end
 	end
     return 0
+end
+
+--[[
+	Player.notify_result: Called by mail.lua to tell the `Player` instance the
+	result of a round.
+
+	result: 'won' or 'missed' for this player
+	ball_x, ball_y: Position of the ball at the time of result
+	paddle: Instance of the *losing* paddle at time of result - this is always
+		the paddle that "missed", not necessarily the paddle this instance
+		controls
+]]
+function Player:notify_result(result, ball, paddle)
+	msg = string.format('LOG: {"event": "%s", "name": "%s", "p": %d, ', result, MY_NAME, self.playerNumber)
+	msg = msg .. string.format('"ball": {"pos": [%d, %d], "mov": [%d, %d], "speed": %.2f, "m": %.2f}, ', 
+								ball.x, ball.y, ball.dx, ball.dy, ball:speed(), ball.dy / ball.dx)
+	msg = msg .. string.format('"paddle": {"top": %d, "bot": %d, "dy": %d}},', paddle.y, paddle.y + paddle.height, paddle.dy)
+	if result == 'missed' then
+	    print(msg)
+	end
 end
 
 return Player

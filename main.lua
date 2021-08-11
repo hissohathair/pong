@@ -87,7 +87,7 @@ PADDLE_HEIGHT = 20
 PADDLE_GUTTER = 10
 
 -- player settings
-MAX_SCORE = 1000
+MAX_SCORE = 100
 
 -- used to decide when computer player should serve
 nextServeTime = 0
@@ -244,11 +244,12 @@ function love.update(dt)
         -- if we reach the left edge of the screen, go back to serve
         -- and update the score and serving player
         if ball.x < 0 then
+            print(string.format('LOG: {"event": "point", "p": 2, "name": "%s", "against": "%s", "server": %d},', 
+                player2Name, player1Name, servingPlayer))
             servingPlayer = 1
             player2Score = player2Score + 1
             sounds['score']:play()
 
-            print(string.format('LOG: {"event": "point", "p": 2, "name": "%s", "against": "%s"}', player2Name, player1Name))
             if player1.notify_result then
                 player1:notify_result('missed', ball, paddle1)
             end
@@ -278,11 +279,12 @@ function love.update(dt)
         -- if we reach the right edge of the screen, go back to serve
         -- and update the score and serving player
         if ball.x > VIRTUAL_WIDTH then
+            print(string.format('LOG: {"event": "point", "p": 1, "name": "%s", "against": "%s", "server": %d},', 
+                player1Name, player2Name, servingPlayer))
             servingPlayer = 2
             player1Score = player1Score + 1
             sounds['score']:play()
 
-            print(string.format('LOG: {"event": "point", "p": 1, "name": "%s", "against": "%s"}', player1Name, player2Name))
             if player1.notify_result then
                 player1:notify_result('won', ball, paddle2)
             end
@@ -478,7 +480,7 @@ end
 ]]
 function love.quit()
     if winningPlayer > 0 then
-        print(string.format('LOG: {"event": "result", "p": %d, "score": "%d:%d", "p1": "%s", "p2:", "%s"}', 
+        print(string.format('LOG: {"event": "result", "p": %d, "score": "%d:%d", "p1": "%s", "p2": "%s"},', 
             winningPlayer, player1Score, player2Score,
             player1Name, player2Name))
     else

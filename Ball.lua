@@ -67,6 +67,14 @@ function Ball:reset()
     self.dy = 0
 end
 
+--[[
+    Ball:speed - Report speed in pixels per second across x and y
+]]
+function Ball:speed()
+    s = math.sqrt(self.dx ^ 2 + self.dy ^ 2)
+    return s
+end
+
 
 --[[
     Ball:collides - Expects a paddle as an argument and returns true or false,

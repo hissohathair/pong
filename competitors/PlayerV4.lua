@@ -8,6 +8,7 @@
 ]]
 
 local Player = Class{}
+local MY_NAME = 'PlayerV4'
 
 --[[
 	Player:init
@@ -113,10 +114,11 @@ end
 		controls
 ]]
 function Player:notify_result(result, ball, paddle)
-	msg = string.format('LOG: {"event": "%s", "name": "PlayerV4", "p": %d, ', result, self.playerNumber)
-	msg = msg .. string.format('"ball": {"pos": [%d, %d], "mov": [%d, %d], "m": %.2f}, ', ball.x, ball.y, ball.dx, ball.dy, ball.dy / ball.dx)
+	msg = string.format('LOG: {"event": "%s", "name": "%s", "p": %d, ', result, MY_NAME, self.playerNumber)
+	msg = msg .. string.format('"ball": {"pos": [%d, %d], "mov": [%d, %d], "speed": %.2f, "m": %.2f}, ', 
+								ball.x, ball.y, ball.dx, ball.dy, ball:speed(), ball.dy / ball.dx)
 	msg = msg .. string.format('"ytarget": %d, ', self.last_target_y)
-	msg = msg .. string.format('"paddle": {"pos": [%d, %d], "dy": %d}}', paddle.y, paddle.y + paddle.height, paddle.dy)
+	msg = msg .. string.format('"paddle": {"top": %d, "bot": %d, "dy": %d}},', paddle.y, paddle.y + paddle.height, paddle.dy)
 	if result == 'missed' then
 	    print(msg)
 	end
