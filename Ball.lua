@@ -65,6 +65,7 @@ function Ball:reset()
     self.y = self.start_y
     self.dx = 0
     self.dy = 0
+    self.last_serve_time = 0
 end
 
 --[[
@@ -141,6 +142,7 @@ function Ball:serve(servingPlayer)
     else
         ball.dx = -math.random(140, 200)
     end
+    ball.last_serve_time = love.timer.getTime()
 end
 
 --[[

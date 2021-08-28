@@ -87,7 +87,7 @@ PADDLE_HEIGHT = 20
 PADDLE_GUTTER = 10
 
 -- player settings
-MAX_SCORE = 100
+MAX_SCORE = 50
 
 -- used to decide when computer player should serve
 nextServeTime = 0
@@ -244,8 +244,8 @@ function love.update(dt)
         -- if we reach the left edge of the screen, go back to serve
         -- and update the score and serving player
         if ball.x < 0 then
-            print(string.format('LOG: {"event": "point", "p": 2, "name": "%s", "against": "%s", "server": %d},', 
-                player2Name, player1Name, servingPlayer))
+            print(string.format('LOG: {"event": "point", "p": 2, "name": "%s", "against": "%s", "server": %d, "volley_time": %.2f},', 
+                player2Name, player1Name, servingPlayer, love.timer.getTime() - ball.last_serve_time))
             servingPlayer = 1
             player2Score = player2Score + 1
             sounds['score']:play()
@@ -463,6 +463,17 @@ function displayScore()
         VIRTUAL_HEIGHT / 3)
     love.graphics.print(tostring(player2Score), VIRTUAL_WIDTH / 2 + 30,
         VIRTUAL_HEIGHT / 3)
+
+    -- player names
+    if MAX_HUMAN_PLAYERS == 0 then
+        love.graphics.setFont(smallFont)
+        love.graphics.setColor(0.7, 0.7, 0.7, 1)
+        love.graphics.printf(player1Name, 0, VIRTUAL_HEIGHT / 3 + 30, 
+            VIRTUAL_WIDTH / 2 - 30, 'right')
+        love.graphics.printf(player2Name, VIRTUAL_WIDTH / 2 + 30, 
+            VIRTUAL_HEIGHT / 3 + 30, VIRTUAL_WIDTH / 2, 'left')
+        love.graphics.setColor(1, 1, 1, 1)
+    end
 end
 
 --[[
