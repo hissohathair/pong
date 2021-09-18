@@ -43,6 +43,7 @@ The original game of Pong allowed the player some control over the angle of defl
 
 Next:
 
+* Could add a bit more nuance to the ball bouncing off paddles by scaling the dy rather than using hard coded values (see Breakout video at 52:55)
 * Can we implement a "cheating" `Player` class?
 
 Later:
